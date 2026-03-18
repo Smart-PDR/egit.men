@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -38,15 +38,15 @@
     .animation-delay-2000 { animation-delay: 2s; }
     .animation-delay-4000 { animation-delay: 4s; }
 
-    /* 2. Sinematik Sayfa Geçişi (Blur ve Spring Efekti) */
+    /* 2. Sinematik Sayfa Geçişi (YENİ: Çok daha yumuşak ve premium) */
     .page-enter { 
-      animation: ultraFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; 
+      animation: premiumSlideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
     }
-    @keyframes ultraFadeIn {
+    @keyframes premiumSlideUp {
       0% { 
         opacity: 0; 
-        transform: translateY(20px) scale(0.98); 
-        filter: blur(8px); 
+        transform: translateY(40px) scale(0.96); 
+        filter: blur(12px); 
       }
       100% { 
         opacity: 1; 
@@ -72,7 +72,7 @@
       backdrop-filter: blur(32px);
       -webkit-backdrop-filter: blur(32px);
       border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
     }
 
     /* 4. Ultra Premium Gölgeler ve Hover Efektleri */
@@ -115,7 +115,7 @@
   <div id="root" class="w-full md:max-w-md lg:max-w-3xl h-full relative z-10 flex flex-col mx-auto overflow-hidden"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     // --- SES MOTORU (Ultra Soft) ---
     let audioCtx = null;
@@ -366,11 +366,21 @@
       const [touchStartX, setTouchStartX] = useState(null);
       const [touchEndX, setTouchEndX] = useState(null);
 
+      // YENİ EKLENTİ: Scroll pozisyonunu yönetmek için referans
+      const mainScrollRef = useRef(null);
+
       const currentLevelInfo = getLevelInfo(points);
 
       // Günün İçeriğini (Bilgi/Söz) Belirleme
       const dailyContentIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % DAILY_CONTENTS.length;
       const todayContent = DAILY_CONTENTS[dailyContentIndex];
+
+      // YENİ EKLENTİ: Sekme veya kategori değiştiğinde scroll'u her zaman en üste al
+      useEffect(() => {
+        if (mainScrollRef.current) {
+           mainScrollRef.current.scrollTop = 0;
+        }
+      }, [activeTab, selectedLessonCat]);
 
       // Sekme Değişimi
       const handleTabChange = (tabId) => {
@@ -621,13 +631,13 @@
             </div>
           </header>
 
-          {/* MAIN İÇERİK */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-28 pb-36 no-scrollbar scroll-smooth" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-            <div key={activeTab} className="page-enter h-full max-w-4xl mx-auto">
+          {/* MAIN İÇERİK - YENİ EKLENTİ: ref eklendi ve alt padding(pb) güvenli hale getirildi */}
+          <main ref={mainScrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 pt-28 pb-safe no-scrollbar scroll-smooth" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+            <div key={activeTab + (selectedLessonCat || '')} className="page-enter h-full max-w-4xl mx-auto flex flex-col">
               
               {/* ANA SAYFA */}
               {activeTab === 'home' && (
-                <div className="space-y-6">
+                <div className="space-y-6 flex-1">
                   
                   <h2 className="text-2xl font-black text-slate-800 md:hidden ml-2 tracking-tight">Merhaba, {userName} 👋</h2>
 
@@ -744,9 +754,9 @@
 
               {/* DERSLER LİSTESİ (ALT KATEGORİ DESTEKLİ) */}
               {activeTab === 'lessons' && (
-                <div className="w-full">
+                <div className="w-full flex-1">
                   {!selectedLessonCat ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 page-enter">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                       {LESSON_CATEGORIES.map((cat) => (
                         <div key={cat.id} onClick={() => { playSound('click'); setSelectedLessonCat(cat.id); }} className="glass-panel rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-4 hover-lift cursor-pointer">
                           <div className={`w-20 h-20 bg-gradient-to-br ${cat.color} rounded-[1.5rem] flex items-center justify-center text-4xl shadow-lg ${cat.shadow} border border-white/20`}>
@@ -760,7 +770,7 @@
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-4 page-enter">
+                    <div className="space-y-4">
                       <div className="flex items-center gap-4 mb-6">
                         <button onClick={() => { playSound('click'); setSelectedLessonCat(null); }} className="w-10 h-10 glass-panel rounded-full flex items-center justify-center text-slate-600 hover-lift shadow-sm">
                           <IconArrowLeft size={20} />
@@ -801,7 +811,7 @@
 
               {/* OYUNLAR */}
               {activeTab === 'games' && (
-                <div className="space-y-4 md:grid md:grid-cols-2 md:space-y-0 md:gap-6">
+                <div className="space-y-4 md:grid md:grid-cols-2 md:space-y-0 md:gap-6 flex-1">
                   {GAMES.map((game) => (
                     <div key={game.id} onClick={() => launchApp(game.path)} className="glass-panel rounded-[2rem] p-5 flex items-center gap-5 hover-lift cursor-pointer group">
                       <div className={`w-16 h-16 ${game.color} rounded-[1.5rem] flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform`}>
@@ -821,7 +831,7 @@
 
               {/* PROFİL */}
               {activeTab === 'profile' && (
-                <div className="space-y-6">
+                <div className="space-y-6 flex-1">
                   <div className="glass-panel rounded-[2.5rem] p-8 md:flex md:items-center md:gap-10">
                     <div className="w-32 h-32 bg-white rounded-[2rem] mx-auto md:mx-0 mb-6 md:mb-0 shadow-xl flex items-center justify-center text-6xl relative shrink-0 border border-slate-100 hover-lift">
                       {userAvatar}
@@ -874,15 +884,12 @@
                     </div>
                   </div>
 
-                  <button onClick={openParentPanel} className="w-full glass-panel border border-slate-200 text-slate-600 rounded-[2rem] py-5 font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform">
-                    <IconSettings size={20} /> Veli Paneli & Ayarlar
-                  </button>
                 </div>
               )}
 
-              {/* HAKKINDA (Ultra Premium Zenginleştirilmiş İçerik) */}
+              {/* HAKKINDA */}
               {activeTab === 'about' && (
-                <div className="space-y-6">
+                <div className="space-y-6 flex-1">
                   
                   {/* Hero / Ana Başlık Kartı */}
                   <div className="glass-panel bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-ultra relative overflow-hidden group">
@@ -969,27 +976,35 @@
                   </div>
                 </div>
               )}
+              
+              {/* YENİ EKLENTİ: Alt navigasyonun içeriğin üzerine binmesini engelleyen güvenli boşluk alanı */}
+              <div className="h-32 md:h-40 w-full shrink-0 pointer-events-none"></div>
 
             </div>
           </main>
 
-          {/* Yüzen Bottom Nav (Floating Pill Navigation) */}
+          {/* Yüzen Bottom Nav (YENİ EKLENTİ: Ayarlar butonu eklendi, orantılandı) */}
           {isParentPanelOpen ? null : (
             <div className="absolute bottom-0 w-full flex justify-center pb-safe pointer-events-none z-30">
-              <nav className="glass-nav pointer-events-auto w-[90%] max-w-md rounded-[2rem] px-2 py-2 flex justify-between items-center mb-6 shadow-ultra">
+              <nav className="glass-nav pointer-events-auto w-[96%] max-w-lg rounded-[2.5rem] px-3 py-3 flex justify-between items-center mb-4 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border border-white/80">
                 {[
                   { id: 'home', icon: IconHome, label: 'Ana Sayfa' },
                   { id: 'lessons', icon: IconBookOpen, label: 'Dersler' },
                   { id: 'games', icon: IconGamepad, label: 'Oyunlar' },
                   { id: 'profile', icon: IconTrophy, label: 'Profil' },
-                  { id: 'about', icon: IconInfo, label: 'Bilgi' }
+                  { id: 'about', icon: IconInfo, label: 'Bilgi' },
+                  { id: 'settings', icon: IconSettings, label: 'Ayarlar', isAction: true } // Yeni eklendi
                 ].map((item) => {
-                  const isActive = activeTab === item.id;
+                  const isActive = activeTab === item.id && !item.isAction;
                   const Icon = item.icon;
                   return (
-                    <button key={item.id} onClick={() => handleTabChange(item.id)} className={`flex flex-col items-center justify-center flex-1 h-14 rounded-2xl relative transition-all duration-300 ${isActive ? 'bg-slate-100/50' : 'hover:bg-white/40'}`}>
-                      <div className={`transition-transform duration-400 cubic-bezier(0.175, 0.885, 0.32, 1.275) flex flex-col items-center ${isActive ? '-translate-y-1 scale-110 text-slate-800' : 'text-slate-400'}`}>
-                        <Icon size={24} />
+                    <button 
+                      key={item.id} 
+                      onClick={() => item.isAction ? openParentPanel() : handleTabChange(item.id)} 
+                      className={`flex flex-col items-center justify-center flex-1 h-14 rounded-2xl relative transition-all duration-300 ${isActive ? 'bg-slate-100/50' : 'hover:bg-white/40 active:scale-95'}`}
+                    >
+                      <div className={`transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) flex flex-col items-center ${isActive ? '-translate-y-1 scale-110 text-slate-800' : 'text-slate-400'}`}>
+                        <Icon size={22} />
                       </div>
                       {isActive && <span className="absolute bottom-2 w-1 h-1 bg-slate-800 rounded-full animate-pop-in"></span>}
                     </button>
