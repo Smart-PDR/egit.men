@@ -895,16 +895,21 @@
                 <div className="w-full flex-1">
                   {!selectedLessonCat ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                      {LESSON_CATEGORIES.map((cat) => (
+                      {LESSON_CATEGORIES.map((cat) => {
+                        const contentCount = LESSON_SUBCATEGORIES[cat.id] ? LESSON_SUBCATEGORIES[cat.id].length : 0;
+                        return (
                         <div key={cat.id} onClick={() => { playSound('click'); setSelectedLessonCat(cat.id); }} className="glass-panel rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-4 hover-lift cursor-pointer">
                           <div className={`w-20 h-20 bg-gradient-to-br ${cat.color} rounded-[1.5rem] flex items-center justify-center text-4xl shadow-lg ${cat.shadow} border border-white/20`}>
                             {cat.icon}
                           </div>
                           <div>
                             <h4 className="font-bold text-slate-800 text-base">{cat.title}</h4>
+                            <span className="inline-block mt-2 text-[9px] font-bold text-slate-500 bg-white px-2.5 py-1 rounded-full shadow-sm border border-slate-100 uppercase tracking-widest">
+                              {contentCount > 0 ? `${contentCount} İçerik` : 'Yakında'}
+                            </span>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -1152,10 +1157,10 @@
           {/* UYGULAMA / OYUN ÇERÇEVESİ (IFRAME) YENİ EKLENTİ */}
           {activeIframe && (
             <div className="fixed inset-0 z-[500] bg-slate-900 flex flex-col animate-in slide-in-from-bottom-full duration-300">
-              <div className="flex justify-between items-center p-3 pt-safe bg-slate-900 text-white shadow-md z-10 shrink-0 border-b border-slate-800">
-                 <button onClick={() => { playSound('click'); setActiveIframe(null); }} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-full font-bold text-sm active:scale-95 transition-all">
-                   <IconArrowLeft size={18} />
-                   Ana Ekrana Dön
+              <div className="flex justify-start items-center p-2 pt-safe bg-slate-900 text-white shadow-md z-10 shrink-0 border-b border-slate-800">
+                 <button onClick={() => { playSound('click'); setActiveIframe(null); }} className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white px-3 py-1.5 rounded-full font-bold text-xs active:scale-95 transition-all">
+                   <IconArrowLeft size={16} />
+                   Ana Ekran
                  </button>
               </div>
               <iframe src={activeIframe} className="w-full h-full flex-1 bg-slate-100 border-none" />
