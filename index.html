@@ -15,6 +15,12 @@
     /* Ultra Premium Tipografi ve Genel Ayarlar */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     
+    html {
+        /* JS ile dinamik olarak değiştirilecek olan varsayılan kök boyut */
+        font-size: 16px; 
+        transition: font-size 0.3s ease;
+    }
+
     body { 
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -38,21 +44,22 @@
     .animation-delay-2000 { animation-delay: 2s; }
     .animation-delay-4000 { animation-delay: 4s; }
 
-    /* 2. Sinematik Sayfa Geçişi (YENİ: Çok daha yumuşak ve premium) */
+    /* 2. Sinematik Sayfa Geçişi */
     .page-enter { 
       animation: premiumSlideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
     }
     @keyframes premiumSlideUp {
-      0% { 
-        opacity: 0; 
-        transform: translateY(40px) scale(0.96); 
-        filter: blur(12px); 
-      }
-      100% { 
-        opacity: 1; 
-        transform: translateY(0) scale(1); 
-        filter: blur(0); 
-      }
+      0% { opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(12px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+
+    /* Modallar İçin Ekstra Hızlı Giriş */
+    .modal-enter {
+      animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     /* 3. Gerçekçi Glassmorphism (Buzlu Cam) */
@@ -146,6 +153,13 @@
         gain.gain.setValueAtTime(0.1, now + 0.24);
         gain.gain.linearRampToValueAtTime(0, now + 0.5);
         osc.start(now); osc.stop(now + 0.5);
+      } else if (type === 'error') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
       }
     };
 
@@ -233,7 +247,6 @@
       { id: 'yardimsever', requiredPoints: 3000, title: 'Yardımsever', desc: '3000 Puan', icon: '🤝' }
     ];
 
-    // --- GÜNLÜK İÇERİKLER VE ÖZEL GÜNLER ---
     const DAILY_CONTENTS = [
       { type: 'Günün Bilgisi', text: 'Bal arıları yarım kilo bal yapabilmek için 2 milyondan fazla çiçeğe konarlar!', icon: '🐝' },
       { type: 'Günün Sözü', text: '"Hayatta en hakiki mürşit ilimdir." - Mustafa Kemal Atatürk', icon: '🌟' },
@@ -244,7 +257,6 @@
       { type: 'Günün Bilgisi', text: 'Kutup ayılarının kürkleri aslında saydamdır, ışığı yansıttığı için beyaz görünür.', icon: '🐻‍❄️' }
     ];
 
-    // Format: 'MM-DD'
     const SPECIAL_DAYS = {
       '04-23': { title: '23 Nisan Kutlu Olsun!', msg: 'Ulusal Egemenlik ve Çocuk Bayramın kutlu olsun kahraman! Bugün senin günün!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
       '05-19': { title: '19 Mayıs Kutlu Olsun!', msg: 'Atatürk\'ü Anma, Gençlik ve Spor Bayramımız kutlu olsun!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
@@ -268,13 +280,14 @@
     const TABS = ['home', 'lessons', 'games', 'profile', 'about'];
 
     // --- PROFİL DÜZENLEME MODALI ---
-    function ProfileSetupModal({ initialName, initialAvatar, onSave, onCancel, isCancellable }) {
+    function ProfileSetupModal({ initialName, initialAvatar, onSave, onCancel, isCancellable, showAlert }) {
       const [name, setName] = useState(initialName || '');
       const [avatar, setAvatar] = useState(initialAvatar || AVATARS[0]);
 
       const handleSave = () => {
         if(name.trim().length < 2) {
-          alert('Lütfen geçerli bir isim gir kahraman!');
+          playSound('error');
+          showAlert('Eksik Bilgi', 'Lütfen en az 2 harfli bir isim gir kahraman!');
           return;
         }
         playSound('click');
@@ -283,7 +296,7 @@
 
       return (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-center">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-center">
             {isCancellable && (
               <button onClick={() => { playSound('click'); onCancel(); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 backdrop-blur rounded-full p-2 hover-lift">
                 <IconX size={20} />
@@ -331,7 +344,7 @@
     function SpecialDayModal({ info, onClose }) {
       return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300">
-           <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-center border-2 border-white">
+           <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-center border-2 border-white">
               <div className="text-7xl mb-6 animate-bounce">{info.icon}</div>
               <h2 className="text-3xl font-black text-slate-800 mb-4 tracking-tight leading-tight">{info.title}</h2>
               <p className="text-slate-600 font-medium leading-relaxed mb-8">{info.msg}</p>
@@ -354,11 +367,20 @@
       
       const [dailyTimeSeconds, setDailyTimeSeconds] = useState(() => loadState('egit_dailyTime', 0));
       const [lastPlayedDate, setLastPlayedDate] = useState(() => loadState('egit_lastDate', new Date().toDateString()));
-      const [timeLimitMinutes, setTimeLimitMinutes] = useState(() => loadState('egit_timeLimit', 30)); 
       
+      // Ayarlar State'leri
+      const [timeLimitMinutes, setTimeLimitMinutes] = useState(() => loadState('egit_timeLimit', 30)); 
+      const [textSize, setTextSize] = useState(() => loadState('egit_textSize', 16)); 
+      
+      // Panel ve Durum State'leri
       const [isParentPanelOpen, setIsParentPanelOpen] = useState(false);
       const [isEditingProfile, setIsEditingProfile] = useState(false);
       const [isLockedByTime, setIsLockedByTime] = useState(false);
+      const [parentAuthOpen, setParentAuthOpen] = useState(false); // Veli Şifre Modalı
+
+      // Özel Bildirim State'leri
+      const [alertConfig, setAlertConfig] = useState(null); // { title, message }
+      const [confirmConfig, setConfirmConfig] = useState(null); // { title, message, onConfirm }
       
       const [specialDayInfo, setSpecialDayInfo] = useState(null);
       const [selectedLessonCat, setSelectedLessonCat] = useState(null);
@@ -366,32 +388,46 @@
       const [touchStartX, setTouchStartX] = useState(null);
       const [touchEndX, setTouchEndX] = useState(null);
 
-      // YENİ EKLENTİ: Scroll pozisyonunu yönetmek için referans
       const mainScrollRef = useRef(null);
-
       const currentLevelInfo = getLevelInfo(points);
 
-      // Günün İçeriğini (Bilgi/Söz) Belirleme
       const dailyContentIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % DAILY_CONTENTS.length;
       const todayContent = DAILY_CONTENTS[dailyContentIndex];
 
-      // YENİ EKLENTİ: Sekme veya kategori değiştiğinde scroll'u her zaman en üste al
+      // Yazı/Ekran Boyutunu Uygulama (Tüm Tailwind rem değerlerini oranlar)
       useEffect(() => {
-        if (mainScrollRef.current) {
-           mainScrollRef.current.scrollTop = 0;
-        }
+        document.documentElement.style.fontSize = `${textSize}px`;
+      }, [textSize]);
+
+      useEffect(() => {
+        if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
       }, [activeTab, selectedLessonCat]);
 
-      // Sekme Değişimi
       const handleTabChange = (tabId) => {
         if (activeTab !== tabId) {
           playSound('click');
           setActiveTab(tabId);
-          setSelectedLessonCat(null); // Başka sekmeye geçince alt kategoriyi sıfırla
+          setSelectedLessonCat(null);
         }
       };
 
-      // Açılış Yönlendirmesi
+      // Modalları Çağırma Yardımcıları
+      const showAlert = (title, message) => {
+        playSound('error');
+        setAlertConfig({ title, message });
+      };
+
+      const showConfirm = (title, message, onConfirm) => {
+        playSound('click');
+        setConfirmConfig({ title, message, onConfirm });
+      };
+
+      // Veli Paneli Giriş Tetikleyicisi
+      const handleOpenParentPanel = () => {
+        playSound('click');
+        setParentAuthOpen(true);
+      };
+
       useEffect(() => {
         if (appState === 'splash') {
           const timer = setTimeout(() => {
@@ -402,7 +438,6 @@
         }
       }, [appState, userName]);
 
-      // Özel Gün (Tatil/Bayram) Kutlaması Kontrolü
       useEffect(() => {
         if (appState === 'main') {
            const today = new Date();
@@ -418,12 +453,7 @@
                  localStorage.setItem(storageKey, 'true');
                  
                  setTimeout(() => {
-                   confetti({ 
-                     particleCount: 200, 
-                     spread: 120, 
-                     origin: { y: 0.5 }, 
-                     colors: SPECIAL_DAYS[dateKey].confettiColors 
-                   });
+                   confetti({ particleCount: 200, spread: 120, origin: { y: 0.5 }, colors: SPECIAL_DAYS[dateKey].confettiColors });
                    playSound('fanfare');
                  }, 500);
               }
@@ -431,7 +461,6 @@
         }
       }, [appState]);
 
-      // Zaman Kontrolü
       useEffect(() => {
         const today = new Date().toDateString();
         if (today !== lastPlayedDate) {
@@ -439,7 +468,7 @@
           saveState('egit_dailyTime', 0); saveState('egit_lastDate', today);
         }
         const interval = setInterval(() => {
-          if (!isParentPanelOpen && !isLockedByTime && !specialDayInfo && appState === 'main') {
+          if (!isParentPanelOpen && !parentAuthOpen && !isLockedByTime && !specialDayInfo && !alertConfig && !confirmConfig && appState === 'main') {
             setDailyTimeSeconds(prev => {
               const newVal = prev + 1;
               saveState('egit_dailyTime', newVal);
@@ -448,11 +477,10 @@
           }
         }, 1000);
         return () => clearInterval(interval);
-      }, [lastPlayedDate, isParentPanelOpen, isLockedByTime, specialDayInfo, appState]);
+      }, [lastPlayedDate, isParentPanelOpen, parentAuthOpen, isLockedByTime, specialDayInfo, alertConfig, confirmConfig, appState]);
 
       useEffect(() => setIsLockedByTime(dailyTimeSeconds >= timeLimitMinutes * 60), [dailyTimeSeconds, timeLimitMinutes]);
 
-      // Rozet Kontrolü
       useEffect(() => {
         saveState('egit_points', points);
         let shouldPlayConfetti = false;
@@ -470,11 +498,10 @@
         }
       }, [points, appState]);
 
-      // Kaydırma
       const onTouchStart = (e) => { setTouchEndX(null); setTouchStartX(e.targetTouches[0].clientX); };
       const onTouchMove = (e) => { setTouchEndX(e.targetTouches[0].clientX); };
       const onTouchEnd = () => {
-        if (!touchStartX || !touchEndX || isLockedByTime || isParentPanelOpen || specialDayInfo || appState !== 'main') return;
+        if (!touchStartX || !touchEndX || isLockedByTime || isParentPanelOpen || parentAuthOpen || specialDayInfo || alertConfig || confirmConfig || appState !== 'main') return;
         const distance = touchStartX - touchEndX;
         if (Math.abs(distance) > 50) playSound('click');
         const currentIndex = TABS.indexOf(activeTab);
@@ -482,16 +509,9 @@
         else if (distance < -50 && currentIndex > 0) setActiveTab(TABS[currentIndex - 1]);
       };
 
-      const openParentPanel = () => {
-        playSound('click');
-        const answer = prompt("Veli Doğrulaması: 8 x 6 kaçtır?");
-        if (answer === "48") setIsParentPanelOpen(true);
-        else if (answer !== null) alert("Hatalı cevap!");
-      };
-
       const launchApp = (path) => {
         playSound('click');
-        if (path === '#') alert('Bu içerik çok yakında eklenecek!');
+        if (path === '#') showAlert('Yakında', 'Bu içerik çok yakında eklenecek kahraman!');
         else setTimeout(() => { window.location.href = path; }, 200);
       };
 
@@ -515,6 +535,7 @@
         return (
           <ProfileSetupModal 
             isCancellable={false}
+            showAlert={showAlert}
             onSave={(name, avatar) => {
               setUserName(name); setUserAvatar(avatar);
               saveState('egit_userName', name); saveState('egit_userAvatar', avatar);
@@ -550,35 +571,118 @@
             <div className="w-32 h-32 bg-slate-800 rounded-full flex items-center justify-center shadow-2xl border border-slate-700 mb-8 animate-float text-6xl">😴</div>
             <h1 className="text-3xl font-black text-center mb-4 tracking-tight">Bugünlük Bu Kadar,<br/>{userName}!</h1>
             <p className="text-center text-slate-400 text-lg mb-10 leading-relaxed max-w-sm">Günlük oyun süren doldu. Gözlerini dinlendir, kitap oku veya ailenle vakit geçir.</p>
-            <button onClick={openParentPanel} className="absolute bottom-12 flex items-center gap-2 text-slate-400 font-bold px-6 py-4 bg-slate-800 rounded-full active:scale-95 transition-transform">
+            <button onClick={handleOpenParentPanel} className="absolute bottom-12 flex items-center gap-2 text-slate-400 font-bold px-6 py-4 bg-slate-800 rounded-full active:scale-95 transition-transform">
               <IconLock size={18} /> Veli Paneli
             </button>
+            
+            {/* Modal Yönetimleri Kilit Ekranında da Çalışmalı */}
+            {parentAuthOpen && <ParentAuthModal />}
             {isParentPanelOpen && <ParentPanelModal />}
+            {alertConfig && <CustomAlert />}
+            {confirmConfig && <CustomConfirm />}
           </div>
         );
       }
 
-      // -- VELİ MODALI --
-      const ParentPanelModal = () => (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in">
-          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-slate-800">
-            <button onClick={() => { playSound('click'); setIsParentPanelOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift">
-              <IconX size={20} />
-            </button>
-            <h2 className="text-xl font-black mb-8 flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-xl"><IconSettings size={24}/></div> Ayarlar</h2>
-            <div className="mb-8">
-              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Günlük Süre</label>
-              <div className="flex items-center gap-4 bg-white/50 p-4 rounded-[1.5rem] border border-white">
-                <input type="range" min="5" max="120" step="5" value={timeLimitMinutes} onChange={(e) => { const val = parseInt(e.target.value); setTimeLimitMinutes(val); saveState('egit_timeLimit', val); }} className="flex-1 accent-slate-800"/>
-                <span className="font-black text-xl text-slate-800 w-12 text-right">{timeLimitMinutes}m</span>
-              </div>
+      // --- ÖZEL MODALLAR (ALERT, CONFIRM, AUTH) ---
+      
+      const CustomAlert = () => (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[300] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl text-center modal-enter border-2 border-white">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">{alertConfig.title}</h2>
+            <p className="text-slate-600 mb-8 font-medium leading-relaxed">{alertConfig.message}</p>
+            <button onClick={() => { playSound('click'); setAlertConfig(null); }} className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-[1.5rem] hover-lift">Tamam</button>
+          </div>
+        </div>
+      );
+
+      const CustomConfirm = () => (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[300] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl text-center modal-enter border-2 border-white">
+            <div className="text-5xl mb-4 animate-pulse">❓</div>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">{confirmConfig.title}</h2>
+            <p className="text-slate-600 mb-8 font-medium leading-relaxed">{confirmConfig.message}</p>
+            <div className="flex gap-4">
+              <button onClick={() => { playSound('click'); setConfirmConfig(null); }} className="flex-1 bg-white text-slate-800 font-bold py-4 rounded-[1.5rem] border border-slate-200 hover-lift">İptal</button>
+              <button onClick={() => { confirmConfig.onConfirm(); setConfirmConfig(null); }} className="flex-1 bg-red-500 text-white font-bold py-4 rounded-[1.5rem] hover-lift shadow-lg shadow-red-500/30">Evet, Onayla</button>
             </div>
-            <button onClick={() => { if(confirm("Tüm veriler silinecek! Emin misiniz?")) { localStorage.clear(); window.location.reload(); } }} className="w-full bg-red-50 text-red-600 font-bold py-4 rounded-2xl hover-lift">
-              Uygulamayı Sıfırla
+          </div>
+        </div>
+      );
+
+      const ParentAuthModal = () => (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-center">
+            <button onClick={() => { playSound('click'); setParentAuthOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift"><IconX size={20} /></button>
+            <h2 className="text-xl font-black mb-4 flex justify-center items-center gap-2"><IconShield size={24} className="text-slate-800"/> Veli Doğrulaması</h2>
+            <p className="text-slate-600 mb-6 font-medium text-sm">Lütfen aşağıdaki matematik işlemini çözün:<br/><span className="text-3xl font-black text-slate-800 tracking-widest mt-2 block">8 x 6 = ?</span></p>
+            <input 
+              type="number" 
+              id="math-auth" 
+              autoFocus
+              onKeyDown={(e) => { if(e.key === 'Enter') document.getElementById('btn-auth-submit').click(); }}
+              className="w-full text-center text-4xl font-black p-4 bg-white/60 border border-white rounded-[1.5rem] focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none mb-6 text-slate-700 shadow-inner" 
+              placeholder="Cevap" 
+            />
+            <button 
+              id="btn-auth-submit"
+              onClick={() => {
+                const val = document.getElementById('math-auth').value;
+                if(val === "48") { playSound('click'); setParentAuthOpen(false); setIsParentPanelOpen(true); }
+                else { showAlert('Hatalı Cevap', 'Girdiğiniz işlem sonucu yanlış. Lütfen tekrar deneyin.'); }
+              }} 
+              className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-[1.5rem] hover-lift"
+            >
+              Doğrula ve Gir
             </button>
           </div>
         </div>
       );
+
+      // -- VELİ PANELİ (AYARLAR) MODALI --
+      const ParentPanelModal = () => (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-slate-800 border-2 border-white">
+            <button onClick={() => { playSound('click'); setIsParentPanelOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift">
+              <IconX size={20} />
+            </button>
+            <h2 className="text-2xl font-black mb-8 flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-xl border border-slate-200"><IconSettings size={24}/></div> Ayarlar</h2>
+            
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Günlük Süre Limiti</label>
+              <div className="flex items-center gap-4 bg-white/50 p-4 rounded-[1.5rem] border border-white shadow-sm">
+                <input type="range" min="5" max="120" step="5" value={timeLimitMinutes} onChange={(e) => { const val = parseInt(e.target.value); setTimeLimitMinutes(val); saveState('egit_timeLimit', val); }} className="flex-1 accent-slate-800"/>
+                <span className="font-black text-xl text-slate-800 w-12 text-right">{timeLimitMinutes}m</span>
+              </div>
+            </div>
+
+            <div className="mb-10">
+              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest flex justify-between">
+                <span>Yazı ve Ekran Boyutu</span>
+                <span className="text-slate-500 font-black">{textSize}px</span>
+              </label>
+              <div className="flex items-center gap-4 bg-white/50 p-4 rounded-[1.5rem] border border-white shadow-sm">
+                <span className="text-sm font-black text-slate-400 cursor-pointer" onClick={() => {const v = Math.max(12, textSize-1); setTextSize(v); saveState('egit_textSize', v);}}>A-</span>
+                <input type="range" min="12" max="22" step="1" value={textSize} onChange={(e) => { const val = parseInt(e.target.value); setTextSize(val); saveState('egit_textSize', val); }} className="flex-1 accent-blue-600"/>
+                <span className="text-lg font-black text-slate-600 cursor-pointer" onClick={() => {const v = Math.min(22, textSize+1); setTextSize(v); saveState('egit_textSize', v);}}>A+</span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 mt-2 text-center">İçerikler ekrana sığmıyorsa küçültebilirsiniz.</p>
+            </div>
+
+            <button onClick={() => { 
+                showConfirm('Uygulamayı Sıfırla', 'Tüm kazanılan puanlar, rozetler ve ayarlar kalıcı olarak silinecek. Onaylıyor musunuz?', () => {
+                  localStorage.clear(); window.location.reload(); 
+                });
+              }} 
+              className="w-full bg-red-50 text-red-600 font-bold py-4 rounded-[1.5rem] border border-red-100 hover-lift flex justify-center items-center gap-2"
+            >
+              <IconLock size={18}/> Uygulamayı Sıfırla
+            </button>
+          </div>
+        </div>
+      );
+
 
       // -- 4. ANA EKRAN (MAIN) --
       return (
@@ -587,7 +691,7 @@
           {/* PROFİL DÜZENLEME MODALI */}
           {isEditingProfile && (
             <ProfileSetupModal 
-              initialName={userName} initialAvatar={userAvatar} isCancellable={true}
+              initialName={userName} initialAvatar={userAvatar} isCancellable={true} showAlert={showAlert}
               onCancel={() => setIsEditingProfile(false)}
               onSave={(name, avatar) => {
                 setUserName(name); setUserAvatar(avatar);
@@ -597,13 +701,12 @@
             />
           )}
 
-          {/* ÖZEL GÜN KUTLAMA MODALI */}
-          {specialDayInfo && (
-            <SpecialDayModal 
-              info={specialDayInfo} 
-              onClose={() => setSpecialDayInfo(null)} 
-            />
-          )}
+          {/* DİĞER MODALLAR */}
+          {specialDayInfo && <SpecialDayModal info={specialDayInfo} onClose={() => setSpecialDayInfo(null)} />}
+          {parentAuthOpen && <ParentAuthModal />}
+          {isParentPanelOpen && <ParentPanelModal />}
+          {alertConfig && <CustomAlert />}
+          {confirmConfig && <CustomConfirm />}
 
           {/* Yüzen Header (Floating Header) */}
           <header className="absolute top-0 w-full z-20 px-4 pt-safe flex justify-center">
@@ -621,7 +724,7 @@
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 bg-slate-100/80 text-slate-600 px-3 py-1.5 rounded-full font-bold text-sm shadow-sm border border-white/50">
                   <IconClock size={16} />
-                  <span>{timeLimitMinutes - Math.floor(dailyTimeSeconds / 60)}m</span>
+                  <span>{Math.max(0, timeLimitMinutes - Math.floor(dailyTimeSeconds / 60))}m</span>
                 </div>
                 <div className="flex items-center gap-1.5 bg-amber-100/80 text-amber-700 px-3 py-1.5 rounded-full font-black text-sm shadow-sm border border-white/50">
                   <IconStar size={16} className="fill-amber-500" />
@@ -631,7 +734,7 @@
             </div>
           </header>
 
-          {/* MAIN İÇERİK - YENİ EKLENTİ: ref eklendi ve alt padding(pb) güvenli hale getirildi */}
+          {/* MAIN İÇERİK */}
           <main ref={mainScrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 pt-28 pb-safe no-scrollbar scroll-smooth" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
             <div key={activeTab + (selectedLessonCat || '')} className="page-enter h-full max-w-4xl mx-auto flex flex-col">
               
@@ -752,7 +855,7 @@
                 </div>
               )}
 
-              {/* DERSLER LİSTESİ (ALT KATEGORİ DESTEKLİ) */}
+              {/* DERSLER LİSTESİ */}
               {activeTab === 'lessons' && (
                 <div className="w-full flex-1">
                   {!selectedLessonCat ? (
@@ -977,14 +1080,14 @@
                 </div>
               )}
               
-              {/* YENİ EKLENTİ: Alt navigasyonun içeriğin üzerine binmesini engelleyen güvenli boşluk alanı */}
+              {/* Güvenli Boşluk */}
               <div className="h-32 md:h-40 w-full shrink-0 pointer-events-none"></div>
 
             </div>
           </main>
 
-          {/* Yüzen Bottom Nav (YENİ EKLENTİ: Ayarlar butonu eklendi, orantılandı) */}
-          {isParentPanelOpen ? null : (
+          {/* Yüzen Bottom Nav */}
+          {isParentPanelOpen || parentAuthOpen ? null : (
             <div className="absolute bottom-0 w-full flex justify-center pb-safe pointer-events-none z-30">
               <nav className="glass-nav pointer-events-auto w-[96%] max-w-lg rounded-[2.5rem] px-3 py-3 flex justify-between items-center mb-4 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] border border-white/80">
                 {[
@@ -993,14 +1096,14 @@
                   { id: 'games', icon: IconGamepad, label: 'Oyunlar' },
                   { id: 'profile', icon: IconTrophy, label: 'Profil' },
                   { id: 'about', icon: IconInfo, label: 'Bilgi' },
-                  { id: 'settings', icon: IconSettings, label: 'Ayarlar', isAction: true } // Yeni eklendi
+                  { id: 'settings', icon: IconSettings, label: 'Ayarlar', isAction: true } 
                 ].map((item) => {
                   const isActive = activeTab === item.id && !item.isAction;
                   const Icon = item.icon;
                   return (
                     <button 
                       key={item.id} 
-                      onClick={() => item.isAction ? openParentPanel() : handleTabChange(item.id)} 
+                      onClick={() => item.isAction ? handleOpenParentPanel() : handleTabChange(item.id)} 
                       className={`flex flex-col items-center justify-center flex-1 h-14 rounded-2xl relative transition-all duration-300 ${isActive ? 'bg-slate-100/50' : 'hover:bg-white/40 active:scale-95'}`}
                     >
                       <div className={`transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) flex flex-col items-center ${isActive ? '-translate-y-1 scale-110 text-slate-800' : 'text-slate-400'}`}>
