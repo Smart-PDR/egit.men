@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Eş Anlamlı Kelimeler - Egit.men</title>
+  <title>Eş Anlamlı Kelimeler Oyunu</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -14,33 +14,32 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     
+    html {
+        font-size: 16px; 
+    }
+
     body { 
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent; 
       overscroll-behavior-y: none; 
-      background-color: #f8fafc;
+      background-color: transparent; /* İframe içinden çağrılacağı için saydam arka plan */
     }
 
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 24px); }
     .pt-safe { padding-top: env(safe-area-inset-top, 16px); }
-
-    /* Arka Plan Derinliği (Türkçe için Rose/Kırmızı tonları) */
-    @keyframes blob {
-      0% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.9); }
-      100% { transform: translate(0px, 0px) scale(1); }
-    }
-    .animate-blob { animation: blob 10s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); }
-    .animation-delay-2000 { animation-delay: 2s; }
-    .animation-delay-4000 { animation-delay: 4s; }
-
-    /* Ultra Fade Geçişleri */
-    .page-enter { animation: ultraFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    @keyframes ultraFadeIn {
-      0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(8px); }
+    
+    /* Animasyonlar */
+    .page-enter { animation: premiumSlideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes premiumSlideUp {
+      0% { opacity: 0; transform: translateY(30px) scale(0.98); filter: blur(8px); }
       100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+
+    .pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     /* Glassmorphism */
@@ -49,42 +48,41 @@
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
-    .glass-nav {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    .hover-lift {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
     }
+    .hover-lift:active { transform: translateY(2px) scale(0.96); }
 
-    .hover-lift { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease; }
-    .hover-lift:active { transform: scale(0.95); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Hata Durumu için Titreme (Shake) Animasyonu */
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+    /* Doğru/Yanlış Seçim Efektleri */
+    .btn-correct {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        color: white !important;
+        border-color: #047857 !important;
+        transform: scale(1.05);
+        box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5) !important;
+        z-index: 10;
     }
-    .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+    .btn-wrong {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        color: white !important;
+        border-color: #b91c1c !important;
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
   </style>
 </head>
-<body class="flex justify-center h-screen overflow-hidden bg-slate-100 text-slate-800">
+<body class="w-full h-screen overflow-hidden text-slate-800 relative bg-slate-50/50">
 
-  <!-- Tema Rengi: Türkçe için Rose/Kırmızı Ambient -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-rose-400/20 rounded-full blur-[120px] animate-blob"></div>
-    <div class="absolute top-[30%] right-[-10%] w-[50%] h-[50%] bg-red-400/20 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
-    <div class="absolute bottom-[-20%] left-[20%] w-[70%] h-[70%] bg-pink-400/20 rounded-full blur-[120px] animate-blob animation-delay-4000"></div>
-  </div>
-
-  <div id="root" class="w-full md:max-w-md lg:max-w-3xl h-full relative z-10 flex flex-col mx-auto overflow-hidden"></div>
+  <div id="root" class="w-full h-full relative z-10 flex flex-col mx-auto max-w-lg md:max-w-2xl overflow-hidden"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo } = React;
 
     // --- SES MOTORU ---
     let audioCtx = null;
@@ -100,338 +98,347 @@
       
       if (type === 'click') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-        osc.start(now); osc.stop(now + 0.05);
-      } else if (type === 'correct') {
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now); osc.stop(now + 0.04);
+      } else if (type === 'success') {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.setValueAtTime(600, now + 0.1);
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(800, now + 0.1);
+        osc.frequency.setValueAtTime(1200, now + 0.2);
         gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now); osc.stop(now + 0.3);
-      } else if (type === 'wrong') {
+        gain.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+      } else if (type === 'error') {
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.start(now); osc.stop(now + 0.2);
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
       } else if (type === 'fanfare') {
-        osc.type = 'square';
-        [392.00, 523.25, 659.25, 783.99].forEach((freq, i) => {
-          osc.frequency.setValueAtTime(freq, now + (i*0.1));
+        osc.type = 'triangle';
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+          osc.frequency.setValueAtTime(freq, now + (i*0.08));
         });
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
-        gain.gain.setValueAtTime(0.15, now + 0.3);
-        gain.gain.linearRampToValueAtTime(0, now + 0.6);
-        osc.start(now); osc.stop(now + 0.6);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+        gain.gain.setValueAtTime(0.1, now + 0.24);
+        gain.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
       }
     };
 
-    // --- İKONLAR ---
-    const IconHome = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-    const IconBookOpen = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
-    const IconGamepad = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>;
-    const IconTrophy = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>;
-    const IconInfo = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
-    const IconArrowLeft = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
-    const IconClock = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-    const IconStar = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-
-    // Eş Anlamlı Kelimeler Veritabanı
-    const WORD_PAIRS = [
-      { id: 1, word1: 'Siyah', word2: 'Kara' },
-      { id: 2, word1: 'Doktor', word2: 'Hekim' },
-      { id: 3, word1: 'Öğretmen', word2: 'Muallim' },
-      { id: 4, word1: 'İhtiyar', word2: 'Yaşlı' },
-      { id: 5, word1: 'Cevap', word2: 'Yanıt' },
-      { id: 6, word1: 'Misafir', word2: 'Konuk' },
-      { id: 7, word1: 'Doğa', word2: 'Tabiat' },
-      { id: 8, word1: 'Öğrenci', word2: 'Talebe' },
-      { id: 9, word1: 'Yürek', word2: 'Kalp' },
-      { id: 10, word1: 'Güz', word2: 'Sonbahar' },
-      { id: 11, word1: 'Hızlı', word2: 'Süratli' },
-      { id: 12, word1: 'Zaman', word2: 'Vakit' }
+    // --- DEVASA KELİME HAVUZU (100+ Kelime) ---
+    const WORD_POOL = [
+      { w1: 'misafir', w2: 'konuk' }, { w1: 'doktor', w2: 'hekim' }, { w1: 'okul', w2: 'mektep' },
+      { w1: 'öğretmen', w2: 'muallim' }, { w1: 'öğrenci', w2: 'talebe' }, { w1: 'kırmızı', w2: 'al' },
+      { w1: 'beyaz', w2: 'ak' }, { w1: 'siyah', w2: 'kara' }, { w1: 'yaşlı', w2: 'ihtiyar' },
+      { w1: 'cevap', w2: 'yanıt' }, { w1: 'soru', w2: 'sual' }, { w1: 'kelime', w2: 'sözcük' },
+      { w1: 'cümle', w2: 'tümce' }, { w1: 'yıl', w2: 'sene' }, { w1: 'güz', w2: 'sonbahar' },
+      { w1: 'anı', w2: 'hatıra' }, { w1: 'rüya', w2: 'düş' }, { w1: 'isim', w2: 'ad' },
+      { w1: 'şehir', w2: 'kent' }, { w1: 'kalp', w2: 'yürek' }, { w1: 'zaman', w2: 'vakit' },
+      { w1: 'rüzgar', w2: 'yel' }, { w1: 'nehir', w2: 'ırmak' }, { w1: 'doğa', w2: 'tabiat' },
+      { w1: 'vatan', w2: 'yurt' }, { w1: 'millet', w2: 'ulus' }, { w1: 'sebep', w2: 'neden' },
+      { w1: 'sonuç', w2: 'netice' }, { w1: 'fayda', w2: 'yarar' }, { w1: 'zarar', w2: 'ziyan' },
+      { w1: 'lider', w2: 'önder' }, { w1: 'barış', w2: 'sulh' }, { w1: 'savaş', w2: 'harp' },
+      { w1: 'özlem', w2: 'hasret' }, { w1: 'yetenek', w2: 'kabiliyet' }, { w1: 'görev', w2: 'vazife' },
+      { w1: 'yoksul', w2: 'fakir' }, { w1: 'zengin', w2: 'varlıklı' }, { w1: 'mutlu', w2: 'mesut' },
+      { w1: 'üzüntü', w2: 'keder' }, { w1: 'hediye', w2: 'armağan' }, { w1: 'sağlık', w2: 'sıhhat' },
+      { w1: 'ıssız', w2: 'tenha' }, { w1: 'kirli', w2: 'pis' }, { w1: 'temiz', w2: 'pak' },
+      { w1: 'cesur', w2: 'yürekli' }, { w1: 'korkak', w2: 'ödlek' }, { w1: 'cimri', w2: 'pinti' },
+      { w1: 'acele', w2: 'çabuk' }, { w1: 'adalet', w2: 'hak' }, { w1: 'akıl', w2: 'us' },
+      { w1: 'alaka', w2: 'ilgi' }, { w1: 'amaç', w2: 'gaye' }, { w1: 'aniden', w2: 'birden' },
+      { w1: 'arzu', w2: 'istek' }, { w1: 'aş', w2: 'yemek' }, { w1: 'ayakkabı', w2: 'pabuç' },
+      { w1: 'bağışlama', w2: 'affetme' }, { w1: 'baş', w2: 'kafa' }, { w1: 'bellek', w2: 'hafıza' },
+      { w1: 'biçim', w2: 'şekil' }, { w1: 'cılız', w2: 'zayıf' }, { w1: 'davet', w2: 'çağrı' },
+      { w1: 'defa', w2: 'kez' }, { w1: 'değer', w2: 'kıymet' }, { w1: 'deprem', w2: 'zelzele' },
+      { w1: 'dergi', w2: 'mecmua' }, { w1: 'dil', w2: 'lisan' }, { w1: 'dost', w2: 'arkadaş' },
+      { w1: 'duygu', w2: 'his' }, { w1: 'düşünce', w2: 'fikir' }, { w1: 'endişe', w2: 'kaygı' },
+      { w1: 'eser', w2: 'yapıt' }, { w1: 'ev', w2: 'konut' }, { w1: 'fena', w2: 'kötü' },
+      { w1: 'giysi', w2: 'elbise' }, { w1: 'gök', w2: 'sema' }, { w1: 'harf', w2: 'imce' },
+      { w1: 'hayat', w2: 'yaşam' }, { w1: 'hürriyet', w2: 'özgürlük' }, { w1: 'ikaz', w2: 'uyarı' },
+      { w1: 'ilave', w2: 'ek' }, { w1: 'imtihan', w2: 'sınav' }, { w1: 'nesil', w2: 'kuşak' },
+      { w1: 'sır', w2: 'giz' }, { w1: 'uçurum', w2: 'yar' }, { w1: 'umut', w2: 'ümit' },
+      { w1: 'uzak', w2: 'ırak' }, { w1: 'vilayet', w2: 'il' }, { w1: 'zor', w2: 'güç' }
     ];
 
+    // --- MOTİVASYON CÜMLELERİ ---
+    const MOTIVATIONS = [
+       "Harika gidiyorsun {name}!",
+       "Sen bir dâhisisin {name}!",
+       "Mükemmel ilerliyorsun!",
+       "İşte böyle {name}, durmak yok!",
+       "Çok zekisin {name}!",
+       "Böyle devam et şampiyon!",
+       "Seni kimse tutamaz {name}!",
+       "Efsane bir cevap daha!"
+    ];
+
+    // --- İKONLAR ---
+    const IconBook = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+    const IconGamepad = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>;
+    const IconArrowRight = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+    const IconCheck = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+
+    // Ana Uygulama
     function App() {
-      const userName = JSON.parse(localStorage.getItem('egit_userName')) || 'Kahraman';
-      const userAvatar = JSON.parse(localStorage.getItem('egit_userAvatar')) || '🦸‍♂️';
-      const points = JSON.parse(localStorage.getItem('egit_points')) || 0;
-      
-      const [dailyTimeSeconds, setDailyTimeSeconds] = useState(() => JSON.parse(localStorage.getItem('egit_dailyTime')) || 0);
-      const timeLimitMinutes = JSON.parse(localStorage.getItem('egit_timeLimit')) || 30;
+      const [view, setView] = useState('menu'); // menu, learn, play, result
+      const [questions, setQuestions] = useState([]);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [score, setScore] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [motivationStr, setMotivationStr] = useState("");
 
-      // Oyun Durumları: intro, playing, gameover
-      const [gameState, setGameState] = useState('intro');
-      
-      const [leftWords, setLeftWords] = useState([]);
-      const [rightWords, setRightWords] = useState([]);
-      const [selectedLeft, setSelectedLeft] = useState(null);
-      const [selectedRight, setSelectedRight] = useState(null);
-      const [matchedIds, setMatchedIds] = useState([]);
-      const [wrongMatch, setWrongMatch] = useState(false);
+      const userName = localStorage.getItem('egit_userName') || 'Kahraman';
 
-      // Ana Uygulamaya Yönlendirme
-      const navigateToApp = () => {
-        playSound('click');
-        window.location.href = '../../index.html'; // Ana sayfaya döner
-      };
-
-      // Zaman Kontrolü (Arka planda günlük süreyi işlemeye devam eder)
-      useEffect(() => {
-        const interval = setInterval(() => {
-            setDailyTimeSeconds(prev => {
-              const newVal = prev + 1;
-              localStorage.setItem('egit_dailyTime', JSON.stringify(newVal));
-              return newVal;
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-      }, []);
-
-      // Oyunu Başlat ve Kelimeleri Hazırla
-      const startGame = () => {
-        playSound('click');
-        
-        // Rastgele 5 çift seç
-        const shuffledPairs = [...WORD_PAIRS].sort(() => 0.5 - Math.random()).slice(0, 5);
-        
-        // Sol ve sağ sütunları oluştur ve ayrı ayrı karıştır
-        const lefts = shuffledPairs.map(p => ({ id: `L${p.id}`, pairId: p.id, text: p.word1 })).sort(() => 0.5 - Math.random());
-        const rights = shuffledPairs.map(p => ({ id: `R${p.id}`, pairId: p.id, text: p.word2 })).sort(() => 0.5 - Math.random());
-
-        setLeftWords(lefts);
-        setRightWords(rights);
-        setMatchedIds([]);
-        setSelectedLeft(null);
-        setSelectedRight(null);
-        setWrongMatch(false);
-        setGameState('playing');
-      };
-
-      // Eşleştirme Kontrolü
-      useEffect(() => {
-        if (selectedLeft && selectedRight) {
-            const leftWord = leftWords.find(w => w.id === selectedLeft);
-            const rightWord = rightWords.find(w => w.id === selectedRight);
-
-            if (leftWord.pairId === rightWord.pairId) {
-                // Doğru Eşleşme
-                playSound('correct');
-                setMatchedIds(prev => [...prev, leftWord.pairId]);
-                setSelectedLeft(null);
-                setSelectedRight(null);
-            } else {
-                // Yanlış Eşleşme
-                playSound('wrong');
-                setWrongMatch(true);
-                setTimeout(() => {
-                    setSelectedLeft(null);
-                    setSelectedRight(null);
-                    setWrongMatch(false);
-                }, 500);
+      // Oyunu Başlatma Mantığı
+      const startNewGame = () => {
+         playSound('click');
+         // Soruları hazırla
+         const shuffledWords = [...WORD_POOL].sort(() => 0.5 - Math.random());
+         const selectedPairs = shuffledWords.slice(0, 10);
+         
+         const newQuestions = selectedPairs.map(pair => {
+            const correctAnswer = pair.w2;
+            let options = [correctAnswer];
+            
+            while(options.length < 4) {
+               const randWord = WORD_POOL[Math.floor(Math.random() * WORD_POOL.length)].w2;
+               if(!options.includes(randWord)) options.push(randWord);
             }
-        }
-      }, [selectedLeft, selectedRight, leftWords, rightWords]);
+            
+            return {
+               question: pair.w1,
+               correct: correctAnswer,
+               options: options.sort(() => 0.5 - Math.random())
+            };
+         });
 
-      // Kazanma Kontrolü
-      useEffect(() => {
-        if (matchedIds.length === 5 && gameState === 'playing') {
-            setTimeout(() => {
-                setGameState('gameover');
-                playSound('fanfare');
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-                
-                // 50 Puan Ekle
-                const currentTotalPoints = JSON.parse(localStorage.getItem('egit_points')) || 0;
-                localStorage.setItem('egit_points', JSON.stringify(currentTotalPoints + 50));
-            }, 600);
-        }
-      }, [matchedIds, gameState]);
+         setQuestions(newQuestions);
+         setCurrentIndex(0);
+         setScore(0);
+         setSelectedOption(null);
+         generateMotivation();
+         setView('play');
+      };
 
-      return (
-        <div className="flex-1 flex flex-col relative w-full h-full font-sans text-slate-800">
-          
-          {/* Yüzen Header (Tıpkı Ana Sayfadaki Gibi) */}
-          <header className="absolute top-0 w-full z-20 px-4 pt-safe flex justify-center">
-            <div className="w-full max-w-4xl glass-panel rounded-full px-4 py-3 mt-2 flex justify-between items-center shadow-sm">
-              <div className="flex items-center gap-3">
-                <button onClick={navigateToApp} className="w-10 h-10 bg-white/50 rounded-full flex items-center justify-center text-slate-600 hover-lift">
-                  <IconArrowLeft size={20} />
-                </button>
-                <div className="hidden md:block">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Kahraman</p>
-                  <h2 className="text-sm font-black text-slate-800 leading-none">{userName}</h2>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-slate-100/80 text-slate-600 px-3 py-1.5 rounded-full font-bold text-sm shadow-sm border border-white/50">
-                  <IconClock size={16} />
-                  <span>{Math.max(0, timeLimitMinutes - Math.floor(dailyTimeSeconds / 60))}m</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-amber-100/80 text-amber-700 px-3 py-1.5 rounded-full font-black text-sm shadow-sm border border-white/50">
-                  <IconStar size={16} className="fill-amber-500" />
-                  <span>{points}</span>
-                </div>
-              </div>
-            </div>
-          </header>
+      const generateMotivation = () => {
+         const randomMoti = MOTIVATIONS[Math.floor(Math.random() * MOTIVATIONS.length)];
+         setMotivationStr(randomMoti.replace('{name}', userName));
+      };
 
-          {/* MAIN İÇERİK */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-28 pb-36 no-scrollbar flex flex-col items-center">
-            <div className="w-full max-w-md mx-auto flex-1 flex flex-col">
-              
-              {gameState === 'intro' && (
-                <div className="flex-1 flex flex-col justify-center page-enter">
-                  <div className="glass-panel rounded-[3rem] p-10 w-full text-center shadow-xl border-2 border-white relative overflow-hidden">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-rose-400 to-red-500 rounded-3xl flex items-center justify-center text-5xl mb-6 shadow-lg shadow-red-500/30 rotate-3">
-                      🔗
-                    </div>
-                    <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Eş Anlam</h1>
-                    <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
-                      Aynı anlama gelen kelimeleri birbiriyle eşleştir. Tüm kelimeleri tamamla ve <span className="text-amber-500 font-bold">50 Puan</span> kazan!
-                    </p>
-                    <button onClick={startGame} className="w-full bg-slate-900 text-white text-xl font-black py-5 rounded-[1.5rem] shadow-xl hover-lift uppercase tracking-widest">
-                      Oyuna Başla
+      const handleOptionClick = (option) => {
+         if (selectedOption) return; // Zaten tıklandıysa bekle
+         
+         setSelectedOption(option);
+         const isCorrect = option === questions[currentIndex].correct;
+         
+         if (isCorrect) {
+             playSound('success');
+             setScore(s => s + 1);
+         } else {
+             playSound('error');
+         }
+
+         setTimeout(() => {
+             if (currentIndex + 1 < questions.length) {
+                 setCurrentIndex(c => c + 1);
+                 setSelectedOption(null);
+                 if(isCorrect) generateMotivation(); // Sadece doğru bildiyse yeni motivasyon
+             } else {
+                 finishGame();
+             }
+         }, 1200);
+      };
+
+      const finishGame = () => {
+         // Puan Ekleme İşlemi (10 Puan)
+         const currentPoints = parseInt(localStorage.getItem('egit_points') || '0', 10);
+         localStorage.setItem('egit_points', currentPoints + 10);
+         
+         playSound('fanfare');
+         confetti({ particleCount: 200, spread: 120, origin: { y: 0.5 }, colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b'] });
+         setView('result');
+      };
+
+      // --- EKRANLAR ---
+
+      // 1. MENU EKRANI
+      if (view === 'menu') {
+          return (
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-y-auto no-scrollbar pt-safe pb-safe">
+                <div className="glass-panel rounded-[2.5rem] bg-gradient-to-br from-rose-500 to-red-600 p-8 text-white shadow-2xl relative overflow-hidden text-center mb-6 shrink-0 border-none">
+                    <div className="absolute -top-10 -left-10 text-9xl opacity-10">📚</div>
+                    <div className="absolute -bottom-10 -right-10 text-9xl opacity-10 rotate-12">🎮</div>
+                    <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Eş Anlamlı Kelimeler</h2>
+                    <p className="text-rose-100 font-medium text-sm md:text-base opacity-90">Kelimelerin gizli ikizlerini bul!</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 flex-1">
+                    <button onClick={() => { playSound('click'); setView('learn'); }} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/60">
+                       <div className="w-16 h-16 rounded-[1.5rem] bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner border border-white shrink-0">
+                          <IconBook size={32} />
+                       </div>
+                       <div className="text-left flex-1">
+                          <h3 className="text-xl font-black text-slate-800 mb-1">Öğrenme Alanı</h3>
+                          <p className="text-xs font-bold text-slate-500">Eş anlam nedir? Örnekleri incele.</p>
+                       </div>
+                       <IconArrowRight size={24} className="text-slate-300" />
                     </button>
-                  </div>
+
+                    <button onClick={startNewGame} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/60">
+                       <div className="w-16 h-16 rounded-[1.5rem] bg-blue-100 text-blue-600 flex items-center justify-center shadow-inner border border-white shrink-0">
+                          <IconGamepad size={32} />
+                       </div>
+                       <div className="text-left flex-1">
+                          <h3 className="text-xl font-black text-slate-800 mb-1">Oyuna Başla</h3>
+                          <p className="text-xs font-bold text-slate-500">Hazırsan bilgini test et!</p>
+                       </div>
+                       <IconArrowRight size={24} className="text-slate-300" />
+                    </button>
                 </div>
-              )}
+             </div>
+          );
+      }
 
-              {gameState === 'playing' && (
-                <div className="flex-1 flex flex-col justify-center page-enter">
-                  <div className="text-center mb-8">
-                     <h2 className="text-2xl font-black text-slate-800">Eşlerini Bul!</h2>
-                     <p className="text-slate-500 text-sm font-medium mt-1">Önce bir kelime seç, sonra eşini bul.</p>
-                  </div>
+      // 2. ÖĞRENME EKRANI
+      if (view === 'learn') {
+          return (
+             <div className="flex-1 flex flex-col h-full page-enter">
+                <div className="p-4 md:p-8 flex-1 overflow-y-auto no-scrollbar pb-32">
+                    <div className="glass-panel rounded-[2rem] p-6 mb-6 bg-white/80">
+                       <h2 className="text-xl font-black text-slate-800 mb-3 flex items-center gap-2">
+                           <span className="text-2xl">💡</span> Eş Anlam (Anlamdaş) Nedir?
+                       </h2>
+                       <p className="text-slate-600 text-sm font-medium leading-relaxed">
+                          Yazılışları ve okunuşları <strong className="text-slate-800">farklı</strong>, fakat anlamları <strong className="text-slate-800">aynı</strong> olan kelimelere eş anlamlı kelimeler denir. Bu kelimeler cümle içinde birbirinin yerine kullanılabilir ve cümlenin anlamı bozulmaz.
+                       </p>
+                    </div>
 
-                  <div className="flex gap-4 w-full">
-                     {/* Sol Sütun */}
-                     <div className="flex-1 space-y-3">
-                        {leftWords.map(w => {
-                           const isMatched = matchedIds.includes(w.pairId);
-                           const isSelected = selectedLeft === w.id;
-                           
-                           let btnClass = "bg-white/70 text-slate-700 border-white/50 hover:bg-white";
-                           if (isMatched) {
-                             btnClass = "bg-emerald-100/50 text-emerald-600 border-emerald-200 opacity-50 scale-95 pointer-events-none";
-                           } else if (isSelected) {
-                             btnClass = wrongMatch 
-                                ? "bg-red-100 text-red-600 border-red-400 animate-shake" 
-                                : "bg-blue-500 text-white border-blue-400 scale-105 shadow-lg shadow-blue-500/30";
-                           }
+                    <h3 className="font-bold text-xs text-slate-400 uppercase tracking-widest mb-4 ml-2">Örnek Kelimeler</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {WORD_POOL.slice(0, 30).map((pair, idx) => (
+                           <div key={idx} className="glass-panel px-4 py-3 rounded-2xl flex justify-between items-center text-sm font-bold bg-white/40 border border-white shadow-sm hover:scale-[1.02] transition-transform">
+                              <span className="text-slate-600">{pair.w1}</span>
+                              <span className="text-slate-300 mx-2">=</span>
+                              <span className="text-rose-500">{pair.w2}</span>
+                           </div>
+                        ))}
+                    </div>
+                    <p className="text-center text-xs font-bold text-slate-400 mt-6 italic">...ve daha yüzlercesi oyunun içinde seni bekliyor!</p>
+                </div>
 
-                           return (
+                <div className="fixed bottom-0 left-0 w-full p-4 pb-safe bg-gradient-to-t from-slate-100 via-slate-100 to-transparent">
+                   <button onClick={startNewGame} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift flex items-center justify-center gap-2">
+                      Anladım, Oyuna Başla <IconGamepad size={20}/>
+                   </button>
+                </div>
+             </div>
+          );
+      }
+
+      // 3. OYUN EKRANI
+      if (view === 'play') {
+          const currentQ = questions[currentIndex];
+          const progressPercent = ((currentIndex) / questions.length) * 100;
+
+          return (
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-hidden pt-safe pb-safe">
+                 
+                 {/* Üst Kısım: Progress & Motivasyon */}
+                 <div className="shrink-0 mb-6">
+                     <div className="flex justify-between items-end mb-2 px-1">
+                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Soru {currentIndex + 1} / {questions.length}</span>
+                         <span className="text-xs font-bold text-amber-500 bg-amber-100 px-2 py-1 rounded-full">{score} Doğru</span>
+                     </div>
+                     <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-4 shadow-inner">
+                         <div className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }}></div>
+                     </div>
+                     <div className="text-center min-h-[1.5rem] pop-in" key={motivationStr}>
+                         <p className="text-sm font-bold text-rose-500">{motivationStr}</p>
+                     </div>
+                 </div>
+
+                 {/* Soru Alanı */}
+                 <div className="flex-1 flex items-center justify-center mb-6">
+                     <div className="glass-panel w-full p-8 rounded-[2.5rem] bg-white text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border-2 border-white relative">
+                         <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">
+                             Eş Anlamlısı Nedir?
+                         </div>
+                         <h2 className="text-4xl md:text-5xl font-black text-slate-800 mt-2 tracking-tight pop-in" key={currentQ.question}>
+                             {currentQ.question}
+                         </h2>
+                     </div>
+                 </div>
+
+                 {/* Şıklar */}
+                 <div className="grid grid-cols-2 gap-3 shrink-0">
+                     {currentQ.options.map((opt, idx) => {
+                         let btnClass = "glass-panel bg-white/80 border border-white text-slate-700 shadow-sm";
+                         if (selectedOption) {
+                             if (opt === currentQ.correct) {
+                                 btnClass = "btn-correct";
+                             } else if (opt === selectedOption) {
+                                 btnClass = "btn-wrong";
+                             } else {
+                                 btnClass = "glass-panel bg-slate-100 text-slate-400 border-transparent opacity-50";
+                             }
+                         }
+
+                         return (
                              <button 
-                               key={w.id} 
-                               onClick={() => { if(!isMatched && !wrongMatch) { playSound('click'); setSelectedLeft(w.id); } }} 
-                               className={`w-full h-16 rounded-[1.5rem] font-bold text-base border-2 transition-all duration-300 shadow-sm ${btnClass}`}
+                                key={idx} 
+                                onClick={() => handleOptionClick(opt)}
+                                disabled={selectedOption !== null}
+                                className={`p-5 md:p-6 rounded-[1.5rem] text-lg md:text-xl font-black transition-all duration-300 ${btnClass} ${!selectedOption ? 'active:scale-95' : ''}`}
                              >
-                               {w.text}
+                                {opt}
                              </button>
-                           )
-                        })}
+                         );
+                     })}
+                 </div>
+             </div>
+          );
+      }
+
+      // 4. SONUÇ EKRANI
+      if (view === 'result') {
+          return (
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter justify-center items-center text-center pt-safe pb-safe">
+                 <div className="glass-panel rounded-[3rem] p-8 w-full bg-white/80 shadow-2xl border-2 border-white relative overflow-hidden text-center pop-in">
+                     <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-300 to-orange-500 rounded-full flex items-center justify-center text-5xl mb-6 shadow-lg shadow-amber-500/30 border-4 border-white animate-[bounce_2s_infinite]">
+                         🏆
+                     </div>
+                     <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Harika İş Çıkardın!</h2>
+                     <p className="text-slate-500 font-bold mb-8">Seninle gurur duyuyoruz {userName}.</p>
+                     
+                     <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100 shadow-inner flex justify-around">
+                        <div>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Doğru</p>
+                           <p className="text-2xl font-black text-emerald-500">{score}/{questions.length}</p>
+                        </div>
+                        <div className="w-px bg-slate-200"></div>
+                        <div>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kazanılan Rozet Puanı</p>
+                           <p className="text-2xl font-black text-amber-500 flex items-center justify-center gap-1"><IconStar size={20}/> +10</p>
+                        </div>
                      </div>
 
-                     {/* Sağ Sütun */}
-                     <div className="flex-1 space-y-3">
-                        {rightWords.map(w => {
-                           const isMatched = matchedIds.includes(w.pairId);
-                           const isSelected = selectedRight === w.id;
-                           
-                           let btnClass = "bg-white/70 text-slate-700 border-white/50 hover:bg-white";
-                           if (isMatched) {
-                             btnClass = "bg-emerald-100/50 text-emerald-600 border-emerald-200 opacity-50 scale-95 pointer-events-none";
-                           } else if (isSelected) {
-                             btnClass = wrongMatch 
-                                ? "bg-red-100 text-red-600 border-red-400 animate-shake" 
-                                : "bg-rose-500 text-white border-rose-400 scale-105 shadow-lg shadow-rose-500/30";
-                           }
+                     <button onClick={startNewGame} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift mb-3">
+                        Yeniden Oyna 🚀
+                     </button>
+                     <button onClick={() => { playSound('click'); setView('menu'); }} className="w-full bg-white text-slate-700 font-bold text-lg py-5 rounded-[1.5rem] border border-slate-200 hover-lift">
+                        Menüye Dön
+                     </button>
+                 </div>
+             </div>
+          );
+      }
 
-                           return (
-                             <button 
-                               key={w.id} 
-                               onClick={() => { if(!isMatched && !wrongMatch) { playSound('click'); setSelectedRight(w.id); } }} 
-                               className={`w-full h-16 rounded-[1.5rem] font-bold text-base border-2 transition-all duration-300 shadow-sm ${btnClass}`}
-                             >
-                               {w.text}
-                             </button>
-                           )
-                        })}
-                     </div>
-                  </div>
-                </div>
-              )}
-
-              {gameState === 'gameover' && (
-                <div className="flex-1 flex flex-col justify-center page-enter">
-                  <div className="glass-panel rounded-[3rem] p-10 w-full text-center shadow-xl border-2 border-white relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 p-4 opacity-10 animate-pulse">
-                      <IconStar size={150} className="text-amber-500"/>
-                    </div>
-                    
-                    <div className="text-6xl mb-6 relative z-10">🎉</div>
-                    <h2 className="text-3xl font-black text-slate-800 mb-2">Harika İş Çıkardın!</h2>
-                    <p className="text-slate-500 font-bold mb-8">
-                      Tüm kelimeleri doğru eşleştirdin.
-                    </p>
-                    
-                    <div className="bg-white/50 rounded-[2rem] p-6 mb-8 border border-white">
-                      <div className="flex justify-between items-center">
-                        <span className="text-amber-600 font-bold uppercase tracking-widest text-xs flex items-center gap-1">
-                          <IconStar size={14}/> Kazanılan Puan
-                        </span>
-                        <span className="text-3xl font-black text-amber-500">+50</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 relative z-10">
-                      <button onClick={startGame} className="w-full bg-slate-900 text-white font-black text-lg py-4 rounded-[1.5rem] shadow-xl hover-lift uppercase tracking-widest">
-                        Tekrar Oyna
-                      </button>
-                      <button onClick={navigateToApp} className="w-full bg-white text-slate-600 border border-slate-200 font-bold text-lg py-4 rounded-[1.5rem] hover-lift">
-                        Derslere Dön
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </main>
-
-          {/* Yüzen Bottom Nav (Uygulamanın Tüm Sayfalarında Sabit) */}
-          <div className="absolute bottom-0 w-full flex justify-center pb-safe pointer-events-none z-30">
-            <nav className="glass-nav pointer-events-auto w-[90%] max-w-md rounded-[2rem] px-2 py-2 flex justify-between items-center mb-6 shadow-ultra">
-              {[
-                { id: 'home', icon: IconHome, label: 'Ana Sayfa' },
-                { id: 'lessons', icon: IconBookOpen, label: 'Dersler' },
-                { id: 'games', icon: IconGamepad, label: 'Oyunlar' },
-                { id: 'profile', icon: IconTrophy, label: 'Profil' },
-                { id: 'about', icon: IconInfo, label: 'Bilgi' }
-              ].map((item) => {
-                const isActive = item.id === 'lessons'; // Bu sayfa bir ders olduğu için Lessons aktif kalır
-                const Icon = item.icon;
-                return (
-                  <button key={item.id} onClick={navigateToApp} className={`flex flex-col items-center justify-center flex-1 h-14 rounded-2xl relative transition-all duration-300 ${isActive ? 'bg-slate-100/50' : 'hover:bg-white/40'}`}>
-                    <div className={`transition-transform duration-400 cubic-bezier(0.175, 0.885, 0.32, 1.275) flex flex-col items-center ${isActive ? '-translate-y-1 scale-110 text-slate-800' : 'text-slate-400'}`}>
-                      <Icon size={24} />
-                    </div>
-                    {isActive && <span className="absolute bottom-2 w-1 h-1 bg-slate-800 rounded-full animate-pop-in"></span>}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-        </div>
-      );
+      return null;
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
