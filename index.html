@@ -1,0 +1,1010 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Egit.men - İlkokul Eğitim Platformu</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* Ultra Premium Tipografi ve Genel Ayarlar */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    body { 
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent; 
+      overscroll-behavior-y: none; 
+      background-color: #f8fafc;
+    }
+
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 24px); }
+    .pt-safe { padding-top: env(safe-area-inset-top, 16px); }
+    
+    /* 1. Ambient Blob Animasyonları (Arka Plan Derinliği) */
+    @keyframes blob {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob { animation: blob 10s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); }
+    .animation-delay-2000 { animation-delay: 2s; }
+    .animation-delay-4000 { animation-delay: 4s; }
+
+    /* 2. Sinematik Sayfa Geçişi (Blur ve Spring Efekti) */
+    .page-enter { 
+      animation: ultraFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; 
+    }
+    @keyframes ultraFadeIn {
+      0% { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.98); 
+        filter: blur(8px); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+        filter: blur(0); 
+      }
+    }
+
+    /* 3. Gerçekçi Glassmorphism (Buzlu Cam) */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 2px 4px -1px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    /* 4. Ultra Premium Gölgeler ve Hover Efektleri */
+    .shadow-ultra {
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.02);
+    }
+    
+    .hover-lift {
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.02);
+    }
+    .hover-lift:active {
+      transform: translateY(2px) scale(0.98);
+    }
+
+    /* Diğer Animasyonlar */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    
+    /* Özel Scrollbar Gizleme */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="flex justify-center h-screen overflow-hidden bg-slate-100">
+
+  <!-- Ambient Background (Arkada süzülen renk küreleri) -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/20 rounded-full blur-[100px] animate-blob"></div>
+    <div class="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-purple-400/20 rounded-full blur-[120px] animate-blob animation-delay-2000"></div>
+    <div class="absolute bottom-[-20%] left-[10%] w-[70%] h-[70%] bg-sky-300/20 rounded-full blur-[100px] animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div id="root" class="w-full md:max-w-md lg:max-w-3xl h-full relative z-10 flex flex-col mx-auto overflow-hidden"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- SES MOTORU (Ultra Soft) ---
+    let audioCtx = null;
+    const playSound = (type) => {
+      const isMuted = JSON.parse(localStorage.getItem('egit_muted')) || false;
+      if (isMuted) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      
+      if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now); osc.stop(now + 0.04);
+      } else if (type === 'fanfare') {
+        osc.type = 'triangle';
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+          osc.frequency.setValueAtTime(freq, now + (i*0.08));
+        });
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+        gain.gain.setValueAtTime(0.1, now + 0.24);
+        gain.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+      }
+    };
+
+    // --- YARDIMCILAR ---
+    const loadState = (key, defaultValue) => {
+      const saved = localStorage.getItem(key);
+      return saved !== null ? JSON.parse(saved) : defaultValue;
+    };
+    const saveState = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+    // --- İKONLAR ---
+    const IconHome = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+    const IconBookOpen = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+    const IconGamepad = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>;
+    const IconTrophy = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>;
+    const IconSettings = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+    const IconStar = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+    const IconArrowLeft = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
+    const IconChevronRight = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>;
+    const IconPlay = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="6 3 20 12 6 21 6 3"/></svg>;
+    const IconLock = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+    const IconClock = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+    const IconX = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    const IconEdit = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>;
+    const IconInfo = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
+    const IconShield = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+    const IconHeart = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+    const IconBrain = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>;
+    const IconSmile = ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+
+    // --- VERİLER VE YOLLAR ---
+    const AVATARS = ['👦', '👧', '👨‍🚀', '👩‍🚀', '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧚‍♀️', '🦁', '🐼', '🦊', '🦖'];
+
+    const LESSON_CATEGORIES = [
+      { id: 'turkce', title: 'Türkçe', desc: 'Okuduğunu Anlama', color: 'from-rose-400 to-red-500', shadow: 'shadow-red-500/30', icon: '📚' },
+      { id: 'matematik', title: 'Matematik', desc: 'Çarpım Tablosu', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-500/30', icon: '🔢' },
+      { id: 'fen', title: 'Fen Bilimleri', desc: 'Gezegenler', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-500/30', icon: '🔬' },
+      { id: 'hayat', title: 'Hayat Bilgisi', desc: 'Çevremizi Koruyalım', color: 'from-teal-400 to-emerald-500', shadow: 'shadow-teal-500/30', icon: '🌍' },
+      { id: 'ingilizce', title: 'İngilizce', desc: 'Renkler ve Sayılar', color: 'from-purple-400 to-fuchsia-500', shadow: 'shadow-purple-500/30', icon: '🔤' },
+      { id: 'din', title: 'Din Kültürü', desc: 'Güzel Ahlak', color: 'from-amber-400 to-orange-500', shadow: 'shadow-amber-500/30', icon: '🕌' },
+      { id: 'rehberlik', title: 'Rehberlik', desc: 'Duygularım', color: 'from-pink-400 to-rose-500', shadow: 'shadow-pink-500/30', icon: '❤️' }
+    ];
+
+    const LESSON_SUBCATEGORIES = {
+      turkce: [
+        { id: 'esanlam', title: 'Eş Anlamlı Kelimeler', desc: 'Kelimelerin eşlerini bul!', icon: '🔗', path: 'apps/turkce/turkce_esanlam.html', color: 'bg-rose-100 text-rose-600' },
+        { id: 'zitanlam', title: 'Zıt Anlamlı Kelimeler', desc: 'Tam tersini düşün!', icon: '↔️', path: '#', color: 'bg-orange-100 text-orange-600' },
+        { id: 'heceleme', title: 'Heceleme', desc: 'Kelimeleri hecelerine ayır!', icon: '📝', path: '#', color: 'bg-red-100 text-red-600' }
+      ],
+      matematik: [
+        { id: 'toplama', title: 'Toplama İşlemi', desc: 'Sayıları birleştir!', icon: '➕', path: '#', color: 'bg-blue-100 text-blue-600' },
+        { id: 'carpim', title: 'Çarpım Tablosu', desc: 'Hızlıca çarp!', icon: '✖️', path: '#', color: 'bg-indigo-100 text-indigo-600' }
+      ],
+      hayat: [
+        { id: 'meslekler', title: 'Meslekleri Tanıyalım', desc: 'Kim ne iş yapar?', icon: '👨‍🚒', path: '#', color: 'bg-teal-100 text-teal-600' }
+      ]
+    };
+
+    const GAMES = [
+      { id: 'kelime_avi', title: 'Kelime Avı', desc: 'Harfleri birleştir!', color: 'bg-amber-100 text-amber-600', icon: '🔍', path: 'apps/turkce/kelime_avi.html' },
+      { id: 'matematik_yarisi', title: 'Matematik Yarışı', desc: 'Hızlıca çöz!', color: 'bg-indigo-100 text-indigo-600', icon: '🚀', path: 'apps/matematik/matematik_yarisi.html' },
+      { id: 'hafiza', title: 'Hafıza Kartları', desc: 'Eşlerini bul!', color: 'bg-pink-100 text-pink-600', icon: '🧠', path: '#' }
+    ];
+
+    const LEVELS = [
+      { max: 100, title: 'Tohum', icon: '🌱', color: 'text-emerald-500' },
+      { max: 300, title: 'Filiz', icon: '🌿', color: 'text-green-500' },
+      { max: 600, title: 'Fidan', icon: '🌳', color: 'text-emerald-600' },
+      { max: 1000, title: 'Yıldız Öğrenci', icon: '⭐', color: 'text-yellow-500' },
+      { max: 1500, title: 'Süper Öğrenci', icon: '🌟', color: 'text-amber-500' },
+      { max: 2500, title: 'Şampiyon', icon: '🏅', color: 'text-orange-500' },
+      { max: 4000, title: 'Süper Kahraman', icon: '🦸', color: 'text-rose-500' },
+      { max: Infinity, title: 'Efsane', icon: '👑', color: 'text-purple-600' }
+    ];
+
+    const BADGES = [
+      { id: 'ilk_adim', requiredPoints: 50, title: 'İlk Adım', desc: '50 Puan', icon: '👟' },
+      { id: 'matematikci', requiredPoints: 150, title: 'Matematikçi', desc: '150 Puan', icon: '🧮' },
+      { id: 'kitap_kurdu', requiredPoints: 300, title: 'Kitap Kurdu', desc: '300 Puan', icon: '🐛' },
+      { id: 'hiz_canavari', requiredPoints: 500, title: 'Hız Canavarı', desc: '500 Puan', icon: '⚡' },
+      { id: 'hafta_savascisi', requiredPoints: 750, title: 'Savaşçı', desc: '750 Puan', icon: '🔥' },
+      { id: 'ay_yildizi', requiredPoints: 1000, title: 'Ay Yıldızı', desc: '1000 Puan', icon: '🌙' },
+      { id: 'mukemmeliyetci', requiredPoints: 1500, title: 'Mükemmel', desc: '1500 Puan', icon: '✨' },
+      { id: 'kasif', requiredPoints: 2000, title: 'Kaşif', desc: '2000 Puan', icon: '🧭' },
+      { id: 'yardimsever', requiredPoints: 3000, title: 'Yardımsever', desc: '3000 Puan', icon: '🤝' }
+    ];
+
+    // --- GÜNLÜK İÇERİKLER VE ÖZEL GÜNLER ---
+    const DAILY_CONTENTS = [
+      { type: 'Günün Bilgisi', text: 'Bal arıları yarım kilo bal yapabilmek için 2 milyondan fazla çiçeğe konarlar!', icon: '🐝' },
+      { type: 'Günün Sözü', text: '"Hayatta en hakiki mürşit ilimdir." - Mustafa Kemal Atatürk', icon: '🌟' },
+      { type: 'Günün Bilgisi', text: 'Ahtapotların tam 3 tane kalbi vardır ve kanları mavi renktedir!', icon: '🐙' },
+      { type: 'Günün Sözü', text: 'Hata yapmaktan korkma, asıl korkulacak şey hiç denememektir.', icon: '💪' },
+      { type: 'Günün Bilgisi', text: 'Dünyadaki en uzun sıradağlar aslında okyanusların altındadır.', icon: '🌊' },
+      { type: 'Günün Sözü', text: 'Başarmanın yarısı inanmaktır. Sen yeter ki kendine inan!', icon: '✨' },
+      { type: 'Günün Bilgisi', text: 'Kutup ayılarının kürkleri aslında saydamdır, ışığı yansıttığı için beyaz görünür.', icon: '🐻‍❄️' }
+    ];
+
+    // Format: 'MM-DD'
+    const SPECIAL_DAYS = {
+      '04-23': { title: '23 Nisan Kutlu Olsun!', msg: 'Ulusal Egemenlik ve Çocuk Bayramın kutlu olsun kahraman! Bugün senin günün!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
+      '05-19': { title: '19 Mayıs Kutlu Olsun!', msg: 'Atatürk\'ü Anma, Gençlik ve Spor Bayramımız kutlu olsun!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
+      '08-30': { title: '30 Ağustos Kutlu Olsun!', msg: 'Büyük Taarruz\'un yıl dönümünde Zafer Bayramımız kutlu olsun!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
+      '10-29': { title: '29 Ekim Kutlu Olsun!', msg: 'Yaşasın Cumhuriyet! Cumhuriyet Bayramımız kutlu olsun!', icon: '🇹🇷', confettiColors: ['#ff0000', '#ffffff'] },
+      '11-10': { title: 'Saygıyla Anıyoruz...', msg: 'Ulu Önder Mustafa Kemal Atatürk\'ü saygı, sevgi ve özlemle anıyoruz.', icon: '♾️', confettiColors: ['#000000', '#ffffff'] }
+    };
+
+    const getLevelInfo = (points) => {
+      let prevMax = 0;
+      for (let i = 0; i < LEVELS.length; i++) {
+        if (points <= LEVELS[i].max) {
+          const progress = points >= LEVELS[i].max ? 100 : Math.max(5, ((points - prevMax) / (LEVELS[i].max - prevMax)) * 100);
+          return { ...LEVELS[i], progress, nextMax: LEVELS[i].max, prevMax };
+        }
+        prevMax = LEVELS[i].max;
+      }
+      return { ...LEVELS[LEVELS.length - 1], progress: 100, nextMax: 'Maks', prevMax };
+    };
+
+    const TABS = ['home', 'lessons', 'games', 'profile', 'about'];
+
+    // --- PROFİL DÜZENLEME MODALI ---
+    function ProfileSetupModal({ initialName, initialAvatar, onSave, onCancel, isCancellable }) {
+      const [name, setName] = useState(initialName || '');
+      const [avatar, setAvatar] = useState(initialAvatar || AVATARS[0]);
+
+      const handleSave = () => {
+        if(name.trim().length < 2) {
+          alert('Lütfen geçerli bir isim gir kahraman!');
+          return;
+        }
+        playSound('click');
+        onSave(name.trim(), avatar);
+      };
+
+      return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-center">
+            {isCancellable && (
+              <button onClick={() => { playSound('click'); onCancel(); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 backdrop-blur rounded-full p-2 hover-lift">
+                <IconX size={20} />
+              </button>
+            )}
+            
+            <h2 className="text-2xl font-black text-slate-800 mb-8 tracking-tight">Kahramanını Hazırla!</h2>
+            
+            <div className="mb-8">
+              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Avatarını Seç</label>
+              <div className="grid grid-cols-4 gap-3 bg-white/50 p-4 rounded-[2rem] border border-white/60 shadow-inner">
+                {AVATARS.map(a => (
+                  <button 
+                    key={a} 
+                    onClick={() => { playSound('click'); setAvatar(a); }} 
+                    className={`text-3xl p-2 rounded-2xl transition-all duration-300 ${avatar === a ? 'bg-blue-500/10 ring-2 ring-blue-500 shadow-sm scale-110' : 'hover:scale-110 active:scale-95 grayscale-[30%]'}`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-10">
+              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Adın Ne?</label>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                maxLength={12}
+                placeholder="Örn: Can" 
+                className="w-full text-center text-3xl font-black p-4 bg-white/60 border border-white rounded-[1.5rem] focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none transition-all placeholder:text-slate-300 shadow-inner text-slate-700" 
+              />
+            </div>
+
+            <button onClick={handleSave} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift">
+              {isCancellable ? 'Değişiklikleri Kaydet' : 'Maceraya Başla 🚀'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ÖZEL GÜN KUTLAMA MODALI ---
+    function SpecialDayModal({ info, onClose }) {
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300">
+           <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-center border-2 border-white">
+              <div className="text-7xl mb-6 animate-bounce">{info.icon}</div>
+              <h2 className="text-3xl font-black text-slate-800 mb-4 tracking-tight leading-tight">{info.title}</h2>
+              <p className="text-slate-600 font-medium leading-relaxed mb-8">{info.msg}</p>
+              <button onClick={() => { playSound('click'); onClose(); }} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift">
+                Teşekkürler! 🎈
+              </button>
+           </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [appState, setAppState] = useState('splash');
+      const [activeTab, setActiveTab] = useState('home');
+      
+      const [userName, setUserName] = useState(() => loadState('egit_userName', ''));
+      const [userAvatar, setUserAvatar] = useState(() => loadState('egit_userAvatar', ''));
+      const [points, setPoints] = useState(() => loadState('egit_points', 0));
+      const [unlockedBadges, setUnlockedBadges] = useState(() => loadState('egit_badges', []));
+      
+      const [dailyTimeSeconds, setDailyTimeSeconds] = useState(() => loadState('egit_dailyTime', 0));
+      const [lastPlayedDate, setLastPlayedDate] = useState(() => loadState('egit_lastDate', new Date().toDateString()));
+      const [timeLimitMinutes, setTimeLimitMinutes] = useState(() => loadState('egit_timeLimit', 30)); 
+      
+      const [isParentPanelOpen, setIsParentPanelOpen] = useState(false);
+      const [isEditingProfile, setIsEditingProfile] = useState(false);
+      const [isLockedByTime, setIsLockedByTime] = useState(false);
+      
+      const [specialDayInfo, setSpecialDayInfo] = useState(null);
+      const [selectedLessonCat, setSelectedLessonCat] = useState(null);
+
+      const [touchStartX, setTouchStartX] = useState(null);
+      const [touchEndX, setTouchEndX] = useState(null);
+
+      const currentLevelInfo = getLevelInfo(points);
+
+      // Günün İçeriğini (Bilgi/Söz) Belirleme
+      const dailyContentIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % DAILY_CONTENTS.length;
+      const todayContent = DAILY_CONTENTS[dailyContentIndex];
+
+      // Sekme Değişimi
+      const handleTabChange = (tabId) => {
+        if (activeTab !== tabId) {
+          playSound('click');
+          setActiveTab(tabId);
+          setSelectedLessonCat(null); // Başka sekmeye geçince alt kategoriyi sıfırla
+        }
+      };
+
+      // Açılış Yönlendirmesi
+      useEffect(() => {
+        if (appState === 'splash') {
+          const timer = setTimeout(() => {
+            if (!userName) setAppState('onboarding');
+            else setAppState('welcome');
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+      }, [appState, userName]);
+
+      // Özel Gün (Tatil/Bayram) Kutlaması Kontrolü
+      useEffect(() => {
+        if (appState === 'main') {
+           const today = new Date();
+           const month = String(today.getMonth() + 1).padStart(2, '0');
+           const day = String(today.getDate()).padStart(2, '0');
+           const year = today.getFullYear();
+           const dateKey = `${month}-${day}`;
+           
+           if (SPECIAL_DAYS[dateKey]) {
+              const storageKey = `egit_celebrated_${dateKey}_${year}`;
+              if (!localStorage.getItem(storageKey)) {
+                 setSpecialDayInfo(SPECIAL_DAYS[dateKey]);
+                 localStorage.setItem(storageKey, 'true');
+                 
+                 setTimeout(() => {
+                   confetti({ 
+                     particleCount: 200, 
+                     spread: 120, 
+                     origin: { y: 0.5 }, 
+                     colors: SPECIAL_DAYS[dateKey].confettiColors 
+                   });
+                   playSound('fanfare');
+                 }, 500);
+              }
+           }
+        }
+      }, [appState]);
+
+      // Zaman Kontrolü
+      useEffect(() => {
+        const today = new Date().toDateString();
+        if (today !== lastPlayedDate) {
+          setDailyTimeSeconds(0); setLastPlayedDate(today);
+          saveState('egit_dailyTime', 0); saveState('egit_lastDate', today);
+        }
+        const interval = setInterval(() => {
+          if (!isParentPanelOpen && !isLockedByTime && !specialDayInfo && appState === 'main') {
+            setDailyTimeSeconds(prev => {
+              const newVal = prev + 1;
+              saveState('egit_dailyTime', newVal);
+              return newVal;
+            });
+          }
+        }, 1000);
+        return () => clearInterval(interval);
+      }, [lastPlayedDate, isParentPanelOpen, isLockedByTime, specialDayInfo, appState]);
+
+      useEffect(() => setIsLockedByTime(dailyTimeSeconds >= timeLimitMinutes * 60), [dailyTimeSeconds, timeLimitMinutes]);
+
+      // Rozet Kontrolü
+      useEffect(() => {
+        saveState('egit_points', points);
+        let shouldPlayConfetti = false;
+        const newBadges = [...unlockedBadges];
+        BADGES.forEach(badge => {
+          if (points >= badge.requiredPoints && !newBadges.includes(badge.id)) {
+            newBadges.push(badge.id);
+            shouldPlayConfetti = true;
+          }
+        });
+        if (shouldPlayConfetti && appState === 'main') {
+          setUnlockedBadges(newBadges);
+          saveState('egit_badges', newBadges);
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        }
+      }, [points, appState]);
+
+      // Kaydırma
+      const onTouchStart = (e) => { setTouchEndX(null); setTouchStartX(e.targetTouches[0].clientX); };
+      const onTouchMove = (e) => { setTouchEndX(e.targetTouches[0].clientX); };
+      const onTouchEnd = () => {
+        if (!touchStartX || !touchEndX || isLockedByTime || isParentPanelOpen || specialDayInfo || appState !== 'main') return;
+        const distance = touchStartX - touchEndX;
+        if (Math.abs(distance) > 50) playSound('click');
+        const currentIndex = TABS.indexOf(activeTab);
+        if (distance > 50 && currentIndex < TABS.length - 1) setActiveTab(TABS[currentIndex + 1]);
+        else if (distance < -50 && currentIndex > 0) setActiveTab(TABS[currentIndex - 1]);
+      };
+
+      const openParentPanel = () => {
+        playSound('click');
+        const answer = prompt("Veli Doğrulaması: 8 x 6 kaçtır?");
+        if (answer === "48") setIsParentPanelOpen(true);
+        else if (answer !== null) alert("Hatalı cevap!");
+      };
+
+      const launchApp = (path) => {
+        playSound('click');
+        if (path === '#') alert('Bu içerik çok yakında eklenecek!');
+        else setTimeout(() => { window.location.href = path; }, 200);
+      };
+
+      // -- EKRAN 1: SPLASH --
+      if (appState === 'splash') {
+        return (
+          <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-[2rem] shadow-2xl mb-8 animate-bounce">
+              <IconBookOpen size={64} className="text-slate-900" />
+            </div>
+            <h1 className="text-3xl font-black text-white tracking-[0.3em] uppercase opacity-90">Egit.men</h1>
+            <div className="mt-12 w-32 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-1/2 h-full bg-white animate-[pulse_1.5s_ease-in-out_infinite] rounded-full"></div>
+            </div>
+          </div>
+        );
+      }
+
+      // -- EKRAN 2: ONBOARDING --
+      if (appState === 'onboarding') {
+        return (
+          <ProfileSetupModal 
+            isCancellable={false}
+            onSave={(name, avatar) => {
+              setUserName(name); setUserAvatar(avatar);
+              saveState('egit_userName', name); saveState('egit_userAvatar', avatar);
+              playSound('fanfare'); confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+              setAppState('main');
+            }}
+          />
+        );
+      }
+
+      // -- EKRAN 3: WELCOME --
+      if (appState === 'welcome') {
+        return (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-6 page-enter bg-slate-900/40 backdrop-blur-2xl">
+            <div className="glass-panel rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl">
+              <div className="w-32 h-32 mx-auto bg-white/50 backdrop-blur rounded-[2.5rem] flex items-center justify-center text-7xl mb-8 shadow-inner border border-white animate-float">
+                {userAvatar}
+              </div>
+              <p className="text-xl font-bold text-slate-500 mb-1">Tekrar Hoş Geldin,</p>
+              <h2 className="text-4xl font-black text-slate-800 mb-10 tracking-tight">{userName}!</h2>
+              <button onClick={() => { playSound('fanfare'); setAppState('main'); }} className="w-full bg-slate-900 text-white text-xl font-bold py-5 rounded-[1.5rem] shadow-xl hover-lift">
+                Maceraya Dön 🚀
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // -- KİLİT EKRANI --
+      if (isLockedByTime) {
+        return (
+          <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8 relative z-50">
+            <div className="w-32 h-32 bg-slate-800 rounded-full flex items-center justify-center shadow-2xl border border-slate-700 mb-8 animate-float text-6xl">😴</div>
+            <h1 className="text-3xl font-black text-center mb-4 tracking-tight">Bugünlük Bu Kadar,<br/>{userName}!</h1>
+            <p className="text-center text-slate-400 text-lg mb-10 leading-relaxed max-w-sm">Günlük oyun süren doldu. Gözlerini dinlendir, kitap oku veya ailenle vakit geçir.</p>
+            <button onClick={openParentPanel} className="absolute bottom-12 flex items-center gap-2 text-slate-400 font-bold px-6 py-4 bg-slate-800 rounded-full active:scale-95 transition-transform">
+              <IconLock size={18} /> Veli Paneli
+            </button>
+            {isParentPanelOpen && <ParentPanelModal />}
+          </div>
+        );
+      }
+
+      // -- VELİ MODALI --
+      const ParentPanelModal = () => (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in">
+          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative page-enter text-slate-800">
+            <button onClick={() => { playSound('click'); setIsParentPanelOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift">
+              <IconX size={20} />
+            </button>
+            <h2 className="text-xl font-black mb-8 flex items-center gap-3"><div className="bg-slate-100 p-2 rounded-xl"><IconSettings size={24}/></div> Ayarlar</h2>
+            <div className="mb-8">
+              <label className="block text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Günlük Süre</label>
+              <div className="flex items-center gap-4 bg-white/50 p-4 rounded-[1.5rem] border border-white">
+                <input type="range" min="5" max="120" step="5" value={timeLimitMinutes} onChange={(e) => { const val = parseInt(e.target.value); setTimeLimitMinutes(val); saveState('egit_timeLimit', val); }} className="flex-1 accent-slate-800"/>
+                <span className="font-black text-xl text-slate-800 w-12 text-right">{timeLimitMinutes}m</span>
+              </div>
+            </div>
+            <button onClick={() => { if(confirm("Tüm veriler silinecek! Emin misiniz?")) { localStorage.clear(); window.location.reload(); } }} className="w-full bg-red-50 text-red-600 font-bold py-4 rounded-2xl hover-lift">
+              Uygulamayı Sıfırla
+            </button>
+          </div>
+        </div>
+      );
+
+      // -- 4. ANA EKRAN (MAIN) --
+      return (
+        <div className="flex-1 flex flex-col relative w-full h-full font-sans text-slate-800">
+          
+          {/* PROFİL DÜZENLEME MODALI */}
+          {isEditingProfile && (
+            <ProfileSetupModal 
+              initialName={userName} initialAvatar={userAvatar} isCancellable={true}
+              onCancel={() => setIsEditingProfile(false)}
+              onSave={(name, avatar) => {
+                setUserName(name); setUserAvatar(avatar);
+                saveState('egit_userName', name); saveState('egit_userAvatar', avatar);
+                setIsEditingProfile(false);
+              }}
+            />
+          )}
+
+          {/* ÖZEL GÜN KUTLAMA MODALI */}
+          {specialDayInfo && (
+            <SpecialDayModal 
+              info={specialDayInfo} 
+              onClose={() => setSpecialDayInfo(null)} 
+            />
+          )}
+
+          {/* Yüzen Header (Floating Header) */}
+          <header className="absolute top-0 w-full z-20 px-4 pt-safe flex justify-center">
+            <div className="w-full max-w-4xl glass-panel rounded-full px-4 py-3 mt-2 flex justify-between items-center shadow-ultra transition-all">
+              <div onClick={() => setActiveTab('profile')} className="flex items-center gap-3 cursor-pointer group">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl shadow-sm border border-slate-100 group-hover:scale-105 transition-transform">
+                  {userAvatar}
+                </div>
+                <div className="hidden md:block">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Kahraman</p>
+                  <h2 className="text-sm font-black text-slate-800 leading-none">{userName}</h2>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-slate-100/80 text-slate-600 px-3 py-1.5 rounded-full font-bold text-sm shadow-sm border border-white/50">
+                  <IconClock size={16} />
+                  <span>{timeLimitMinutes - Math.floor(dailyTimeSeconds / 60)}m</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-amber-100/80 text-amber-700 px-3 py-1.5 rounded-full font-black text-sm shadow-sm border border-white/50">
+                  <IconStar size={16} className="fill-amber-500" />
+                  <span>{points}</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN İÇERİK */}
+          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-28 pb-36 no-scrollbar scroll-smooth" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+            <div key={activeTab} className="page-enter h-full max-w-4xl mx-auto">
+              
+              {/* ANA SAYFA */}
+              {activeTab === 'home' && (
+                <div className="space-y-6">
+                  
+                  <h2 className="text-2xl font-black text-slate-800 md:hidden ml-2 tracking-tight">Merhaba, {userName} 👋</h2>
+
+                  {/* 1. HERO ALANI */}
+                  <div className="glass-panel bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-[2.5rem] p-8 text-white shadow-ultra relative overflow-hidden group hover-lift">
+                    <div className="absolute -top-10 -right-10 p-4 opacity-10 animate-pulse transition-transform group-hover:scale-110 group-hover:rotate-12 duration-700">
+                      <IconStar size={220} />
+                    </div>
+                    <h3 className="text-slate-300 font-bold mb-3 uppercase tracking-widest text-xs">Senin İçin Seçildi</h3>
+                    <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight tracking-tight">Matematik<br/>Yarışı</h2>
+                    <button onClick={() => launchApp('apps/matematik/matematik_yarisi.html')} className="bg-white text-slate-900 px-8 py-4 rounded-full font-bold flex items-center gap-3 shadow-xl active:scale-95 transition-transform text-sm uppercase tracking-widest">
+                      <IconPlay size={18} className="fill-slate-900" />
+                      Maceraya Başla
+                    </button>
+                  </div>
+
+                  {/* 2. HIZLI İSTATİSTİKLER */}
+                  <div className="grid grid-cols-3 gap-3 md:gap-4">
+                    <div className="glass-panel rounded-[1.5rem] p-4 flex flex-col items-center justify-center text-center hover-lift cursor-default">
+                      <span className="text-2xl mb-1">🔥</span>
+                      <span className="text-xl md:text-2xl font-black text-slate-800">{points}</span>
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Puan</span>
+                    </div>
+                    <div className="glass-panel rounded-[1.5rem] p-4 flex flex-col items-center justify-center text-center hover-lift cursor-default">
+                      <span className="text-2xl mb-1">⏱️</span>
+                      <span className="text-xl md:text-2xl font-black text-slate-800">{Math.floor(dailyTimeSeconds / 60)}<span className="text-sm">m</span></span>
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bugün</span>
+                    </div>
+                    <div className="glass-panel rounded-[1.5rem] p-4 flex flex-col items-center justify-center text-center hover-lift cursor-default">
+                      <span className="text-2xl mb-1">{currentLevelInfo.icon}</span>
+                      <span className="text-sm md:text-base font-black text-slate-800 line-clamp-1 leading-tight mt-1">{currentLevelInfo.title}</span>
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Seviye</span>
+                    </div>
+                  </div>
+
+                  {/* GÜNÜN SÖZÜ / BİLGİSİ */}
+                  <div className="glass-panel rounded-[2rem] p-5 hover-lift cursor-default flex items-center gap-4">
+                     <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-slate-100 shadow-sm">
+                       {todayContent.icon}
+                     </div>
+                     <div>
+                       <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">{todayContent.type}</h4>
+                       <p className="text-sm font-semibold text-slate-700 leading-snug">{todayContent.text}</p>
+                     </div>
+                  </div>
+
+                  {/* 3. SIRADAKİ HEDEF */}
+                  {(() => {
+                    const nextBadge = BADGES.find(b => !unlockedBadges.includes(b.id));
+                    if (!nextBadge) return null; 
+                    const progressPercent = Math.min(100, (points / nextBadge.requiredPoints) * 100);
+                    return (
+                      <div className="glass-panel rounded-[2rem] p-6 hover-lift relative overflow-hidden group">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                              {nextBadge.icon}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-slate-800 text-base">Sıradaki Hedef</h4>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{nextBadge.title} Rozeti</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black text-slate-800">{points} <span className="text-slate-400 font-medium">/ {nextBadge.requiredPoints}</span></span>
+                          </div>
+                        </div>
+                        <div className="w-full h-2.5 bg-slate-200/60 rounded-full overflow-hidden shadow-inner">
+                          <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-1000 ease-out relative" style={{ width: `${progressPercent}%` }}>
+                            <div className="absolute top-0 right-0 bottom-0 left-0 bg-white/30 animate-[pulse_2s_ease-in-out_infinite]"></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 4. KALDIĞIN YERDEN DEVAM ET */}
+                  <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest ml-2 mt-8">Kaldığın Yerden Devam Et</h3>
+                  <div onClick={() => launchApp('apps/turkce/kelime_avi.html')} className="glass-panel rounded-[2rem] p-5 flex items-center justify-between hover-lift cursor-pointer group">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                        🔍
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-lg">Kelime Avı</h4>
+                        <p className="text-xs font-bold text-slate-400 mb-2 mt-1">%30 Tamamlandı</p>
+                        <div className="w-40 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="w-1/3 h-full bg-blue-500 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                      <IconChevronRight size={20} className="text-slate-400 group-hover:text-blue-600" />
+                    </div>
+                  </div>
+
+                  {/* 5. KEŞFET */}
+                  <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest ml-2 mt-8">Yeni Bir Şeyler Keşfet</h3>
+                  <div onClick={() => launchApp('#')} className="glass-panel rounded-[2rem] p-5 flex items-center gap-5 hover-lift cursor-pointer group mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-pink-400 to-rose-500 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-pink-500/30 border border-white/20 group-hover:scale-110 transition-transform">
+                        🧠
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-800 text-lg">Hafıza Kartları</h4>
+                        <p className="text-xs font-bold text-slate-400 mt-1">Görsel hafızanı test et!</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-pink-50 transition-colors">
+                        <IconPlay size={16} className="text-slate-400 group-hover:text-pink-600" />
+                      </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* DERSLER LİSTESİ (ALT KATEGORİ DESTEKLİ) */}
+              {activeTab === 'lessons' && (
+                <div className="w-full">
+                  {!selectedLessonCat ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 page-enter">
+                      {LESSON_CATEGORIES.map((cat) => (
+                        <div key={cat.id} onClick={() => { playSound('click'); setSelectedLessonCat(cat.id); }} className="glass-panel rounded-[2rem] p-6 flex flex-col items-center justify-center text-center gap-4 hover-lift cursor-pointer">
+                          <div className={`w-20 h-20 bg-gradient-to-br ${cat.color} rounded-[1.5rem] flex items-center justify-center text-4xl shadow-lg ${cat.shadow} border border-white/20`}>
+                            {cat.icon}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-base">{cat.title}</h4>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{cat.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 page-enter">
+                      <div className="flex items-center gap-4 mb-6">
+                        <button onClick={() => { playSound('click'); setSelectedLessonCat(null); }} className="w-10 h-10 glass-panel rounded-full flex items-center justify-center text-slate-600 hover-lift shadow-sm">
+                          <IconArrowLeft size={20} />
+                        </button>
+                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                          {LESSON_CATEGORIES.find(c => c.id === selectedLessonCat)?.title}
+                        </h2>
+                      </div>
+                      
+                      {LESSON_SUBCATEGORIES[selectedLessonCat] ? (
+                        <div className="space-y-4 md:grid md:grid-cols-2 md:space-y-0 md:gap-6">
+                          {LESSON_SUBCATEGORIES[selectedLessonCat].map((sub) => (
+                            <div key={sub.id} onClick={() => launchApp(sub.path)} className="glass-panel rounded-[2rem] p-5 flex items-center gap-5 hover-lift cursor-pointer group">
+                              <div className={`w-16 h-16 ${sub.color} rounded-[1.5rem] flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform`}>
+                                {sub.icon}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-slate-800 text-lg mb-0.5">{sub.title}</h4>
+                                <p className="text-xs font-bold text-slate-400">{sub.desc}</p>
+                              </div>
+                              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-slate-800 group-hover:text-white transition-colors shadow-sm">
+                                <IconPlay size={20} className="fill-current ml-0.5" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="glass-panel rounded-[2rem] p-10 text-center border-2 border-dashed border-slate-300">
+                          <div className="text-5xl mb-4 opacity-50">🚧</div>
+                          <h3 className="text-xl font-black text-slate-800 mb-2">Çok Yakında!</h3>
+                          <p className="text-slate-500 font-medium text-sm">Bu ders için eğlenceli içerikler hazırlıyoruz kahraman. Daha sonra tekrar uğra!</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* OYUNLAR */}
+              {activeTab === 'games' && (
+                <div className="space-y-4 md:grid md:grid-cols-2 md:space-y-0 md:gap-6">
+                  {GAMES.map((game) => (
+                    <div key={game.id} onClick={() => launchApp(game.path)} className="glass-panel rounded-[2rem] p-5 flex items-center gap-5 hover-lift cursor-pointer group">
+                      <div className={`w-16 h-16 ${game.color} rounded-[1.5rem] flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition-transform`}>
+                        {game.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-800 text-lg mb-0.5">{game.title}</h4>
+                        <p className="text-xs font-bold text-slate-400">{game.desc}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-slate-800 group-hover:text-white transition-colors shadow-sm">
+                        <IconPlay size={20} className="fill-current ml-0.5" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* PROFİL */}
+              {activeTab === 'profile' && (
+                <div className="space-y-6">
+                  <div className="glass-panel rounded-[2.5rem] p-8 md:flex md:items-center md:gap-10">
+                    <div className="w-32 h-32 bg-white rounded-[2rem] mx-auto md:mx-0 mb-6 md:mb-0 shadow-xl flex items-center justify-center text-6xl relative shrink-0 border border-slate-100 hover-lift">
+                      {userAvatar}
+                      <div className="absolute -bottom-3 -right-3 text-3xl drop-shadow-lg bg-white rounded-full p-2 border border-slate-100">{currentLevelInfo.icon}</div>
+                    </div>
+                    
+                    <div className="flex-1 text-center md:text-left">
+                      <div className="flex flex-col md:flex-row items-center gap-3 mb-3">
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight">{userName}</h2>
+                        <button onClick={() => { playSound('click'); setIsEditingProfile(true); }} className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest hover:bg-slate-50 transition-colors">
+                          <IconEdit size={12} /> Düzenle
+                        </button>
+                      </div>
+
+                      <span className={`inline-block px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest bg-white shadow-sm border border-slate-100 mb-6 ${currentLevelInfo.color}`}>
+                        Seviye: {currentLevelInfo.title}
+                      </span>
+                      
+                      <div className="bg-white/50 p-4 rounded-2xl border border-white">
+                        <div className="flex justify-between text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">
+                          <span className="text-slate-700">{points} Puan</span>
+                          <span>Hedef: {currentLevelInfo.nextMax}</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-slate-800 transition-all duration-1000 ease-out" style={{ width: `${currentLevelInfo.progress}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="glass-panel rounded-[2.5rem] p-6">
+                    <div className="flex justify-between items-end mb-6 px-2">
+                      <h3 className="font-black text-xl text-slate-800 tracking-tight">Rozet Koleksiyonu</h3>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">{unlockedBadges.length} / {BADGES.length}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      {BADGES.map((badge) => {
+                        const isUnlocked = unlockedBadges.includes(badge.id);
+                        return (
+                          <div key={badge.id} onClick={() => playSound('click')} className={`flex flex-col items-center p-4 rounded-[1.5rem] transition-all select-none border ${isUnlocked ? `bg-white border-white shadow-md hover-lift` : 'bg-slate-50/50 border-transparent opacity-50 grayscale'}`}>
+                            <div className="text-3xl mb-3 relative">
+                              {badge.icon}
+                              {!isUnlocked && <div className="absolute -bottom-2 -right-2 bg-slate-800 text-white rounded-full p-1"><IconLock size={10} /></div>}
+                            </div>
+                            <span className="text-[10px] font-bold text-center text-slate-600 uppercase tracking-wider">{badge.title}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <button onClick={openParentPanel} className="w-full glass-panel border border-slate-200 text-slate-600 rounded-[2rem] py-5 font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform">
+                    <IconSettings size={20} /> Veli Paneli & Ayarlar
+                  </button>
+                </div>
+              )}
+
+              {/* HAKKINDA (Ultra Premium Zenginleştirilmiş İçerik) */}
+              {activeTab === 'about' && (
+                <div className="space-y-6">
+                  
+                  {/* Hero / Ana Başlık Kartı */}
+                  <div className="glass-panel bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-ultra relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 p-4 opacity-10 pointer-events-none transform transition-transform group-hover:rotate-12 duration-1000">
+                        <IconInfo size={240}/>
+                      </div>
+                      <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-[0.2em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">
+                        Egit.men
+                      </h2>
+                      <p className="text-slate-300 font-medium leading-relaxed md:text-lg max-w-xl">
+                        Öğrenmenin en eğlenceli hali! Eğitimde tam fırsat eşitliğini sağlamak ve her çocuğun içindeki gizli potansiyeli ortaya çıkarmak için tutkuyla tasarlandı.
+                      </p>
+                  </div>
+
+                  {/* Değerlerimiz Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="glass-panel p-5 rounded-[2rem] flex flex-col items-center text-center hover-lift">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-3"><IconShield size={20}/></div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">%100 Güvenli</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">Reklam ve veri takibi yok.</p>
+                     </div>
+                     <div className="glass-panel p-5 rounded-[2rem] flex flex-col items-center text-center hover-lift">
+                        <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 mb-3"><IconHeart size={20}/></div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">Ücretsiz</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">Eğitim herkesin hakkıdır.</p>
+                     </div>
+                     <div className="glass-panel p-5 rounded-[2rem] flex flex-col items-center text-center hover-lift">
+                        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-3"><IconSmile size={20}/></div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">Eğlenceli</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">Oyunlaştırılmış öğrenme.</p>
+                     </div>
+                     <div className="glass-panel p-5 rounded-[2rem] flex flex-col items-center text-center hover-lift">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-3"><IconBrain size={20}/></div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">Pedagojik</h4>
+                        <p className="text-[10px] text-slate-500 font-medium">Uzman danışman onaylı.</p>
+                     </div>
+                  </div>
+
+                  {/* Vizyon & Misyon Kartı */}
+                  <div className="glass-panel rounded-[2.5rem] p-8 md:p-10 border border-white">
+                     <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-4 flex items-center gap-3">
+                       <span className="text-3xl">🎯</span> Vizyon ve Misyon
+                     </h3>
+                     <div className="space-y-4">
+                       <p className="text-slate-600 leading-relaxed font-medium text-sm md:text-base">
+                         <strong className="text-slate-800">Vizyonumuz:</strong> Sosyo-ekonomik engelleri tamamen aşarak, dünyanın neresinde olursa olsun her çocuğa en üst düzey eğitim araçlarını eşit ve adil bir şekilde sunmaktır. 
+                       </p>
+                       <p className="text-slate-600 leading-relaxed font-medium text-sm md:text-base">
+                         <strong className="text-slate-800">Misyonumuz:</strong> Çocukların ekrana bakarak pasif tüketiciler olmalarını engellemek; bunun yerine sıkıcı ezberci sistemleri geride bırakarak onları araştıran, görevlerle öğrenen, meraklı ve interaktif bireyler haline getirmektir.
+                       </p>
+                     </div>
+                  </div>
+
+                  {/* Geliştirici Kartı */}
+                  <div className="glass-panel rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-white flex flex-col md:flex-row items-center gap-6 text-center md:text-left hover-lift cursor-default">
+                      <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center text-5xl shadow-inner border-4 border-white shrink-0">
+                        👨‍🏫
+                      </div>
+                      <div>
+                         <h4 className="font-black text-slate-800 text-xl mb-1">Sami G.</h4>
+                         <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Psikolojik Danışman & Geliştirici</p>
+                         <p className="text-sm text-slate-500 font-medium italic">
+                           "Bir çocuğun dünyasına inmeden ona hiçbir şey öğretemezsiniz. Egit.men, teknoloji ile çocuk psikolojisinin mükemmel uyumunu arayan bir hayalin ürünüdür."
+                         </p>
+                      </div>
+                  </div>
+
+                  {/* Yasal Uyarı & Gizlilik */}
+                  <div className="bg-slate-100/50 rounded-[2rem] p-6 md:p-8 border border-slate-200/60">
+                     <h3 className="text-xs font-bold text-slate-700 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                       <IconShield size={16} className="text-slate-400" /> Yasal Uyarı & Sorumluluk Reddi
+                     </h3>
+                     <div className="text-slate-500 text-[11px] leading-relaxed text-justify space-y-3">
+                       <p>
+                         Bu platform tamamen eğitim ve pedagojik gelişim destek amaçlı, ticari olmayan bir girişimdir. Öğrencilerimizin üst düzey güvenliği gereği <strong>"Sıfır Veri Toplama"</strong> (Zero Data Collection) prensibi ile çalışır. 
+                       </p>
+                       <p>
+                         Kullanıcı adları, avatarlar, toplanan puanlar ve kazanılan rozetler dahil hiçbir kişisel veri internet ortamına (uzak sunuculara) aktarılmaz. Tüm ilerlemeler yalnızca kullanıcının kendi cihazında (tarayıcının Local Storage alanında) çevrimdışı olarak tutulmaktadır.
+                       </p>
+                       <p>
+                         Platformun kullanımı sırasında oluşabilecek teknik aksaklıklardan, cihaz uyumsuzluklarından veya ebeveyn kontrolü dışındaki erişimlerden geliştirici doğrudan veya dolaylı olarak sorumlu tutulamaz. Uygulama içerisindeki "Günlük Süre Sınırı" ve benzeri kontrollerin takibi tamamen velinin kendi inisiyatifinde ve sorumluluğundadır.
+                       </p>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </main>
+
+          {/* Yüzen Bottom Nav (Floating Pill Navigation) */}
+          {isParentPanelOpen ? null : (
+            <div className="absolute bottom-0 w-full flex justify-center pb-safe pointer-events-none z-30">
+              <nav className="glass-nav pointer-events-auto w-[90%] max-w-md rounded-[2rem] px-2 py-2 flex justify-between items-center mb-6 shadow-ultra">
+                {[
+                  { id: 'home', icon: IconHome, label: 'Ana Sayfa' },
+                  { id: 'lessons', icon: IconBookOpen, label: 'Dersler' },
+                  { id: 'games', icon: IconGamepad, label: 'Oyunlar' },
+                  { id: 'profile', icon: IconTrophy, label: 'Profil' },
+                  { id: 'about', icon: IconInfo, label: 'Bilgi' }
+                ].map((item) => {
+                  const isActive = activeTab === item.id;
+                  const Icon = item.icon;
+                  return (
+                    <button key={item.id} onClick={() => handleTabChange(item.id)} className={`flex flex-col items-center justify-center flex-1 h-14 rounded-2xl relative transition-all duration-300 ${isActive ? 'bg-slate-100/50' : 'hover:bg-white/40'}`}>
+                      <div className={`transition-transform duration-400 cubic-bezier(0.175, 0.885, 0.32, 1.275) flex flex-col items-center ${isActive ? '-translate-y-1 scale-110 text-slate-800' : 'text-slate-400'}`}>
+                        <Icon size={24} />
+                      </div>
+                      {isActive && <span className="absolute bottom-2 w-1 h-1 bg-slate-800 rounded-full animate-pop-in"></span>}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
