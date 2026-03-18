@@ -23,7 +23,7 @@
       -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent; 
       overscroll-behavior-y: none; 
-      background-color: transparent; /* İframe içinden çağrılacağı için saydam arka plan */
+      background-color: transparent; 
     }
 
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 24px); }
@@ -36,13 +36,24 @@
       100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
     }
 
-    .pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     @keyframes popIn {
       0% { opacity: 0; transform: scale(0.8); }
       100% { opacity: 1; transform: scale(1); }
     }
 
-    /* Glassmorphism */
+    /* Ambient Arka Plan Animasyonu */
+    @keyframes blob {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob { animation: blob 10s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); }
+    .animation-delay-2000 { animation-delay: 2s; }
+    .animation-delay-4000 { animation-delay: 4s; }
+
+    /* Glassmorphism ve Premium Kartlar */
     .glass-panel {
       background: rgba(255, 255, 255, 0.7);
       backdrop-filter: blur(24px);
@@ -53,6 +64,10 @@
 
     .hover-lift {
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
     }
     .hover-lift:active { transform: translateY(2px) scale(0.96); }
 
@@ -65,7 +80,7 @@
         color: white !important;
         border-color: #047857 !important;
         transform: scale(1.05);
-        box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5) !important;
+        box-shadow: 0 15px 30px -5px rgba(16, 185, 129, 0.5) !important;
         z-index: 10;
     }
     .btn-wrong {
@@ -73,11 +88,18 @@
         color: white !important;
         border-color: #b91c1c !important;
         transform: scale(0.95);
-        opacity: 0.8;
+        opacity: 0.9;
     }
   </style>
 </head>
-<body class="w-full h-screen overflow-hidden text-slate-800 relative bg-slate-50/50">
+<body class="w-full h-screen overflow-hidden text-slate-800 relative bg-slate-50/80">
+
+  <!-- YENİ EKLENEN: İframe İçi Premium Ambient Arka Plan -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-rose-400/20 rounded-full blur-[100px] animate-blob"></div>
+    <div class="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-blue-400/20 rounded-full blur-[120px] animate-blob animation-delay-2000"></div>
+    <div class="absolute bottom-[-20%] left-[10%] w-[70%] h-[70%] bg-amber-300/20 rounded-full blur-[100px] animate-blob animation-delay-4000"></div>
+  </div>
 
   <div id="root" class="w-full h-full relative z-10 flex flex-col mx-auto max-w-lg md:max-w-2xl overflow-hidden"></div>
 
@@ -182,6 +204,8 @@
     const IconGamepad = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>;
     const IconArrowRight = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
     const IconCheck = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+    const IconStar = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+    const IconInfo = ({ size }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>;
 
     // Ana Uygulama
     function App() {
@@ -235,10 +259,11 @@
          
          setSelectedOption(option);
          const isCorrect = option === questions[currentIndex].correct;
+         const newScore = isCorrect ? score + 1 : score; // Güncel skoru hesapla
          
          if (isCorrect) {
              playSound('success');
-             setScore(s => s + 1);
+             setScore(newScore);
          } else {
              playSound('error');
          }
@@ -249,15 +274,18 @@
                  setSelectedOption(null);
                  if(isCorrect) generateMotivation(); // Sadece doğru bildiyse yeni motivasyon
              } else {
-                 finishGame();
+                 // Oyun bitti, final skoru yolluyoruz ki Closure hatasıyla beyaz ekran olmasın
+                 finishGame(newScore);
              }
          }, 1200);
       };
 
-      const finishGame = () => {
-         // Puan Ekleme İşlemi (10 Puan)
-         const currentPoints = parseInt(localStorage.getItem('egit_points') || '0', 10);
-         localStorage.setItem('egit_points', currentPoints + 10);
+      // YENİ EKLENEN: Tam doğru sayısına (finalScore) göre XP ekleyen ve sayfayı kusursuz geçiren kod
+      const finishGame = (finalScore) => {
+         if (finalScore > 0) {
+             const currentPoints = parseInt(localStorage.getItem('egit_points') || '0', 10);
+             localStorage.setItem('egit_points', currentPoints + finalScore);
+         }
          
          playSound('fanfare');
          confetti({ particleCount: 200, spread: 120, origin: { y: 0.5 }, colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b'] });
@@ -269,35 +297,39 @@
       // 1. MENU EKRANI
       if (view === 'menu') {
           return (
-             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-y-auto no-scrollbar pt-safe pb-safe">
-                <div className="glass-panel rounded-[2.5rem] bg-gradient-to-br from-rose-500 to-red-600 p-8 text-white shadow-2xl relative overflow-hidden text-center mb-6 shrink-0 border-none">
-                    <div className="absolute -top-10 -left-10 text-9xl opacity-10">📚</div>
-                    <div className="absolute -bottom-10 -right-10 text-9xl opacity-10 rotate-12">🎮</div>
-                    <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Eş Anlamlı Kelimeler</h2>
-                    <p className="text-rose-100 font-medium text-sm md:text-base opacity-90">Kelimelerin gizli ikizlerini bul!</p>
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-y-auto no-scrollbar pt-safe pb-safe z-10 relative">
+                <div className="glass-panel rounded-[2.5rem] bg-gradient-to-br from-rose-500 via-red-500 to-red-600 p-8 text-white shadow-[0_20px_40px_-15px_rgba(225,29,72,0.4)] relative overflow-hidden text-center mb-6 shrink-0 border border-white/40">
+                    <div className="absolute -top-10 -left-10 text-9xl opacity-10 drop-shadow-lg">📚</div>
+                    <div className="absolute -bottom-10 -right-10 text-9xl opacity-10 rotate-12 drop-shadow-lg">🎮</div>
+                    <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight relative z-10">Eş Anlamlı Kelimeler</h2>
+                    <p className="text-rose-100 font-medium text-sm md:text-base opacity-90 relative z-10">Kelimelerin gizli ikizlerini bul!</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 flex-1">
-                    <button onClick={() => { playSound('click'); setView('learn'); }} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/60">
-                       <div className="w-16 h-16 rounded-[1.5rem] bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner border border-white shrink-0">
+                    <button onClick={() => { playSound('click'); setView('learn'); }} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/80 shadow-md">
+                       <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600 flex items-center justify-center shadow-inner border border-white shrink-0">
                           <IconBook size={32} />
                        </div>
                        <div className="text-left flex-1">
                           <h3 className="text-xl font-black text-slate-800 mb-1">Öğrenme Alanı</h3>
                           <p className="text-xs font-bold text-slate-500">Eş anlam nedir? Örnekleri incele.</p>
                        </div>
-                       <IconArrowRight size={24} className="text-slate-300" />
+                       <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
+                          <IconArrowRight size={20} />
+                       </div>
                     </button>
 
-                    <button onClick={startNewGame} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/60">
-                       <div className="w-16 h-16 rounded-[1.5rem] bg-blue-100 text-blue-600 flex items-center justify-center shadow-inner border border-white shrink-0">
+                    <button onClick={startNewGame} className="glass-panel p-6 rounded-[2rem] flex items-center gap-6 hover-lift bg-white/80 shadow-md">
+                       <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 flex items-center justify-center shadow-inner border border-white shrink-0">
                           <IconGamepad size={32} />
                        </div>
                        <div className="text-left flex-1">
                           <h3 className="text-xl font-black text-slate-800 mb-1">Oyuna Başla</h3>
                           <p className="text-xs font-bold text-slate-500">Hazırsan bilgini test et!</p>
                        </div>
-                       <IconArrowRight size={24} className="text-slate-300" />
+                       <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
+                          <IconArrowRight size={20} />
+                       </div>
                     </button>
                 </div>
              </div>
@@ -307,32 +339,32 @@
       // 2. ÖĞRENME EKRANI
       if (view === 'learn') {
           return (
-             <div className="flex-1 flex flex-col h-full page-enter">
+             <div className="flex-1 flex flex-col h-full page-enter z-10 relative">
                 <div className="p-4 md:p-8 flex-1 overflow-y-auto no-scrollbar pb-32">
-                    <div className="glass-panel rounded-[2rem] p-6 mb-6 bg-white/80">
+                    <div className="glass-panel rounded-[2rem] p-6 mb-6 bg-white/90 shadow-md">
                        <h2 className="text-xl font-black text-slate-800 mb-3 flex items-center gap-2">
-                           <span className="text-2xl">💡</span> Eş Anlam (Anlamdaş) Nedir?
+                           <span className="text-2xl drop-shadow-sm">💡</span> Eş Anlam (Anlamdaş) Nedir?
                        </h2>
                        <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                          Yazılışları ve okunuşları <strong className="text-slate-800">farklı</strong>, fakat anlamları <strong className="text-slate-800">aynı</strong> olan kelimelere eş anlamlı kelimeler denir. Bu kelimeler cümle içinde birbirinin yerine kullanılabilir ve cümlenin anlamı bozulmaz.
+                          Yazılışları ve okunuşları <strong className="text-slate-800 bg-rose-100 px-1 rounded">farklı</strong>, fakat anlamları <strong className="text-slate-800 bg-emerald-100 px-1 rounded">aynı</strong> olan kelimelere eş anlamlı kelimeler denir. Bu kelimeler cümle içinde birbirinin yerine kullanılabilir ve cümlenin anlamı bozulmaz.
                        </p>
                     </div>
 
-                    <h3 className="font-bold text-xs text-slate-400 uppercase tracking-widest mb-4 ml-2">Örnek Kelimeler</h3>
+                    <h3 className="font-bold text-xs text-slate-400 uppercase tracking-widest mb-4 ml-2 flex items-center gap-2">Örnek Kelimeler <span className="h-px bg-slate-200 flex-1"></span></h3>
                     <div className="grid grid-cols-2 gap-3">
                         {WORD_POOL.slice(0, 30).map((pair, idx) => (
-                           <div key={idx} className="glass-panel px-4 py-3 rounded-2xl flex justify-between items-center text-sm font-bold bg-white/40 border border-white shadow-sm hover:scale-[1.02] transition-transform">
-                              <span className="text-slate-600">{pair.w1}</span>
+                           <div key={idx} className="glass-panel px-4 py-3 rounded-2xl flex justify-between items-center text-sm font-bold bg-white/70 border border-white shadow-sm hover:scale-[1.02] transition-transform cursor-default">
+                              <span className="text-slate-700">{pair.w1}</span>
                               <span className="text-slate-300 mx-2">=</span>
                               <span className="text-rose-500">{pair.w2}</span>
                            </div>
                         ))}
                     </div>
-                    <p className="text-center text-xs font-bold text-slate-400 mt-6 italic">...ve daha yüzlercesi oyunun içinde seni bekliyor!</p>
+                    <p className="text-center text-xs font-bold text-slate-400 mt-6 mb-4 italic">...ve daha yüzlercesi oyunun içinde seni bekliyor!</p>
                 </div>
 
-                <div className="fixed bottom-0 left-0 w-full p-4 pb-safe bg-gradient-to-t from-slate-100 via-slate-100 to-transparent">
-                   <button onClick={startNewGame} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift flex items-center justify-center gap-2">
+                <div className="fixed bottom-0 left-0 w-full p-4 pb-safe bg-gradient-to-t from-slate-100 via-slate-100/90 to-transparent">
+                   <button onClick={startNewGame} className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-[0_10px_20px_-5px_rgba(0,0,0,0.3)] hover-lift flex items-center justify-center gap-3">
                       Anladım, Oyuna Başla <IconGamepad size={20}/>
                    </button>
                 </div>
@@ -346,38 +378,40 @@
           const progressPercent = ((currentIndex) / questions.length) * 100;
 
           return (
-             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-hidden pt-safe pb-safe">
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter overflow-hidden pt-safe pb-safe z-10 relative">
                  
                  {/* Üst Kısım: Progress & Motivasyon */}
                  <div className="shrink-0 mb-6">
                      <div className="flex justify-between items-end mb-2 px-1">
                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Soru {currentIndex + 1} / {questions.length}</span>
-                         <span className="text-xs font-bold text-amber-500 bg-amber-100 px-2 py-1 rounded-full">{score} Doğru</span>
+                         <span className="text-xs font-bold text-amber-600 bg-amber-100 border border-amber-200 px-3 py-1 rounded-full shadow-sm">
+                            {score} Doğru
+                         </span>
                      </div>
-                     <div className="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden mb-4 shadow-inner">
-                         <div className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }}></div>
+                     <div className="w-full h-3 bg-slate-200/80 rounded-full overflow-hidden mb-4 shadow-inner border border-slate-100">
+                         <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPercent}%` }}></div>
                      </div>
                      <div className="text-center min-h-[1.5rem] pop-in" key={motivationStr}>
-                         <p className="text-sm font-bold text-rose-500">{motivationStr}</p>
+                         <p className="text-sm font-bold text-rose-500 drop-shadow-sm">{motivationStr}</p>
                      </div>
                  </div>
 
                  {/* Soru Alanı */}
                  <div className="flex-1 flex items-center justify-center mb-6">
-                     <div className="glass-panel w-full p-8 rounded-[2.5rem] bg-white text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border-2 border-white relative">
+                     <div className="glass-panel w-full p-8 md:p-12 rounded-[2.5rem] bg-white/95 text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] border-2 border-white relative">
                          <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">
                              Eş Anlamlısı Nedir?
                          </div>
-                         <h2 className="text-4xl md:text-5xl font-black text-slate-800 mt-2 tracking-tight pop-in" key={currentQ.question}>
+                         <h2 className="text-4xl md:text-5xl font-black text-slate-800 mt-2 tracking-tight pop-in drop-shadow-sm" key={currentQ.question}>
                              {currentQ.question}
                          </h2>
                      </div>
                  </div>
 
                  {/* Şıklar */}
-                 <div className="grid grid-cols-2 gap-3 shrink-0">
+                 <div className="grid grid-cols-2 gap-3 md:gap-4 shrink-0">
                      {currentQ.options.map((opt, idx) => {
-                         let btnClass = "glass-panel bg-white/80 border border-white text-slate-700 shadow-sm";
+                         let btnClass = "glass-panel bg-white/90 border-2 border-white text-slate-700 shadow-sm";
                          if (selectedOption) {
                              if (opt === currentQ.correct) {
                                  btnClass = "btn-correct";
@@ -393,7 +427,7 @@
                                 key={idx} 
                                 onClick={() => handleOptionClick(opt)}
                                 disabled={selectedOption !== null}
-                                className={`p-5 md:p-6 rounded-[1.5rem] text-lg md:text-xl font-black transition-all duration-300 ${btnClass} ${!selectedOption ? 'active:scale-95' : ''}`}
+                                className={`p-5 md:p-7 rounded-[1.5rem] text-lg md:text-xl font-black transition-all duration-300 ${btnClass} ${!selectedOption ? 'active:scale-95 hover:bg-white hover:shadow-md' : ''}`}
                              >
                                 {opt}
                              </button>
@@ -404,35 +438,54 @@
           );
       }
 
-      // 4. SONUÇ EKRANI
+      // 4. SONUÇ EKRANI (Tasarım Premium Hissiyata Yükseltildi, Dinamik XP Eklendi ve Çıkış Bilgisi Eklendi)
       if (view === 'result') {
           return (
-             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter justify-center items-center text-center pt-safe pb-safe">
-                 <div className="glass-panel rounded-[3rem] p-8 w-full bg-white/80 shadow-2xl border-2 border-white relative overflow-hidden text-center pop-in">
-                     <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-300 to-orange-500 rounded-full flex items-center justify-center text-5xl mb-6 shadow-lg shadow-amber-500/30 border-4 border-white animate-[bounce_2s_infinite]">
+             <div className="flex-1 flex flex-col p-4 md:p-8 h-full page-enter justify-center items-center text-center pt-safe pb-safe z-10 relative">
+                 <div className="glass-panel rounded-[3rem] p-8 md:p-10 w-full bg-white/90 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] border border-white/80 relative overflow-hidden text-center pop-in">
+                     
+                     {/* Premium Arka Plan Işıltısı */}
+                     <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-amber-100 to-orange-50 opacity-60 pointer-events-none"></div>
+
+                     {/* İkon */}
+                     <div className="w-28 h-28 mx-auto bg-gradient-to-br from-amber-300 to-orange-500 rounded-full flex items-center justify-center text-6xl mb-6 shadow-xl shadow-amber-500/40 border-4 border-white animate-[bounce_2s_infinite] relative z-10">
                          🏆
                      </div>
-                     <h2 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Harika İş Çıkardın!</h2>
-                     <p className="text-slate-500 font-bold mb-8">Seninle gurur duyuyoruz {userName}.</p>
+
+                     <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-2 tracking-tight relative z-10">Harika İş Çıkardın!</h2>
+                     <p className="text-slate-500 font-bold mb-8 relative z-10">Seninle gurur duyuyoruz {userName}.</p>
                      
-                     <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100 shadow-inner flex justify-around">
-                        <div>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Doğru</p>
-                           <p className="text-2xl font-black text-emerald-500">{score}/{questions.length}</p>
+                     {/* İstatistik Alanı */}
+                     <div className="bg-white rounded-[2rem] p-6 mb-6 border border-slate-100 shadow-lg flex justify-around relative z-10 transform transition hover:scale-105 duration-300">
+                        <div className="flex-1">
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Doğru Sayısı</p>
+                           <p className="text-4xl font-black text-emerald-500 drop-shadow-sm">{score}<span className="text-xl text-slate-300">/{questions.length}</span></p>
                         </div>
-                        <div className="w-px bg-slate-200"></div>
-                        <div>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kazanılan Rozet Puanı</p>
-                           <p className="text-2xl font-black text-amber-500 flex items-center justify-center gap-1"><IconStar size={20}/> +10</p>
+                        <div className="w-px bg-slate-200 mx-2"></div>
+                        <div className="flex-1">
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kazanılan XP</p>
+                           <p className="text-4xl font-black text-amber-500 flex items-center justify-center gap-1 drop-shadow-sm">
+                              <IconStar size={28}/> +{score}
+                           </p>
                         </div>
                      </div>
 
-                     <button onClick={startNewGame} className="w-full bg-slate-900 text-white font-bold text-lg py-5 rounded-[1.5rem] shadow-xl hover-lift mb-3">
-                        Yeniden Oyna 🚀
-                     </button>
-                     <button onClick={() => { playSound('click'); setView('menu'); }} className="w-full bg-white text-slate-700 font-bold text-lg py-5 rounded-[1.5rem] border border-slate-200 hover-lift">
-                        Menüye Dön
-                     </button>
+                     {/* Premium Çıkış Yönlendirme Paneli */}
+                     <div className="mb-8 p-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 rounded-2xl border border-blue-100 flex items-start gap-4 text-left shadow-inner relative z-10">
+                         <div className="text-blue-500 shrink-0 mt-0.5"><IconInfo size={24} /></div>
+                         <p className="text-xs md:text-sm font-semibold text-slate-600 leading-relaxed">
+                            Kazandığın XP puanları ana hesabına başarıyla eklendi! Başka bir derse veya oyuna geçiş yapmak için en üstteki <span className="font-black text-slate-800 bg-white px-2 py-0.5 rounded-md shadow-sm border border-slate-200 whitespace-nowrap">Ana Ekrana Dön</span> butonunu kullanabilirsin.
+                         </p>
+                     </div>
+
+                     <div className="flex flex-col md:flex-row gap-3 relative z-10">
+                        <button onClick={startNewGame} className="flex-1 bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold text-lg py-4 rounded-[1.5rem] shadow-xl hover-lift">
+                           Tekrar Oyna 🚀
+                        </button>
+                        <button onClick={() => { playSound('click'); setView('menu'); }} className="flex-1 bg-white text-slate-700 font-bold text-lg py-4 rounded-[1.5rem] border border-slate-200 shadow-sm hover-lift">
+                           Oyun Menüsü
+                        </button>
+                     </div>
                  </div>
              </div>
           );
