@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Egit.men - İlkokul Eğitim Platformu</title>
+  <title>🦉 Egit.men - İlkokul Eğitim Platformu</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦉</text></svg>">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -194,13 +195,13 @@
     const AVATARS = ['👦', '👧', '👨‍🚀', '👩‍🚀', '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧚‍♀️', '🦁', '🐼', '🦊', '🦖'];
 
     const LESSON_CATEGORIES = [
-      { id: 'turkce', title: 'Türkçe', desc: 'Okuduğunu Anlama', color: 'from-rose-400 to-red-500', shadow: 'shadow-red-500/30', icon: '📚' },
-      { id: 'matematik', title: 'Matematik', desc: 'Çarpım Tablosu', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-500/30', icon: '🔢' },
-      { id: 'fen', title: 'Fen Bilimleri', desc: 'Gezegenler', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-500/30', icon: '🔬' },
-      { id: 'hayat', title: 'Hayat Bilgisi', desc: 'Çevremizi Koruyalım', color: 'from-teal-400 to-emerald-500', shadow: 'shadow-teal-500/30', icon: '🌍' },
-      { id: 'ingilizce', title: 'İngilizce', desc: 'Renkler ve Sayılar', color: 'from-purple-400 to-fuchsia-500', shadow: 'shadow-purple-500/30', icon: '🔤' },
-      { id: 'din', title: 'Din Kültürü', desc: 'Güzel Ahlak', color: 'from-amber-400 to-orange-500', shadow: 'shadow-amber-500/30', icon: '🕌' },
-      { id: 'rehberlik', title: 'Rehberlik', desc: 'Duygularım', color: 'from-pink-400 to-rose-500', shadow: 'shadow-pink-500/30', icon: '❤️' }
+      { id: 'turkce', title: 'Türkçe', desc: 'Dil Becerilerini Geliştir', color: 'from-rose-400 to-red-500', shadow: 'shadow-red-500/30', icon: '📚' },
+      { id: 'matematik', title: 'Matematik', desc: 'Sayılarla Problem Çözme', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-500/30', icon: '🔢' },
+      { id: 'fen', title: 'Fen Bilimleri', desc: 'Doğayı ve Evreni Keşfet', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-500/30', icon: '🔬' },
+      { id: 'hayat', title: 'Hayat Bilgisi', desc: 'Günlük Yaşam Kuralları', color: 'from-teal-400 to-emerald-500', shadow: 'shadow-teal-500/30', icon: '🌍' },
+      { id: 'ingilizce', title: 'İngilizce', desc: 'Yeni Bir Dil Öğren', color: 'from-purple-400 to-fuchsia-500', shadow: 'shadow-purple-500/30', icon: '🔤' },
+      { id: 'din', title: 'Din Kültürü', desc: 'Manevi Değerlerimiz', color: 'from-amber-400 to-orange-500', shadow: 'shadow-amber-500/30', icon: '🕌' },
+      { id: 'rehberlik', title: 'Rehberlik', desc: 'Duygusal Gelişim', color: 'from-pink-400 to-rose-500', shadow: 'shadow-pink-500/30', icon: '❤️' }
     ];
 
     const LESSON_SUBCATEGORIES = {
@@ -611,34 +612,61 @@
         </div>
       );
 
-      const ParentAuthModal = () => (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in">
-          <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-center">
-            <button onClick={() => { playSound('click'); setParentAuthOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift"><IconX size={20} /></button>
-            <h2 className="text-xl font-black mb-4 flex justify-center items-center gap-2"><IconShield size={24} className="text-slate-800"/> Veli Doğrulaması</h2>
-            <p className="text-slate-600 mb-6 font-medium text-sm">Lütfen aşağıdaki matematik işlemini çözün:<br/><span className="text-3xl font-black text-slate-800 tracking-widest mt-2 block">8 x 6 = ?</span></p>
-            <input 
-              type="number" 
-              id="math-auth" 
-              autoFocus
-              onKeyDown={(e) => { if(e.key === 'Enter') document.getElementById('btn-auth-submit').click(); }}
-              className="w-full text-center text-4xl font-black p-4 bg-white/60 border border-white rounded-[1.5rem] focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none mb-6 text-slate-700 shadow-inner" 
-              placeholder="Cevap" 
-            />
-            <button 
-              id="btn-auth-submit"
-              onClick={() => {
-                const val = document.getElementById('math-auth').value;
-                if(val === "48") { playSound('click'); setParentAuthOpen(false); setIsParentPanelOpen(true); }
-                else { showAlert('Hatalı Cevap', 'Girdiğiniz işlem sonucu yanlış. Lütfen tekrar deneyin.'); }
-              }} 
-              className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-[1.5rem] hover-lift"
-            >
-              Doğrula ve Gir
-            </button>
+      const ParentAuthModal = () => {
+        const [mathChallenge, setMathChallenge] = useState({ q: '', a: '' });
+
+        useEffect(() => {
+          // Yetişkinler için uygun, rastgele zihinsel matematik sorusu üretici
+          const operations = ['+', '-', '*'];
+          const op = operations[Math.floor(Math.random() * operations.length)];
+          let num1, num2, answer;
+          
+          if (op === '+') {
+            num1 = Math.floor(Math.random() * 50) + 20; // 20-69 arası
+            num2 = Math.floor(Math.random() * 50) + 20; // 20-69 arası
+            answer = num1 + num2;
+          } else if (op === '-') {
+            num1 = Math.floor(Math.random() * 50) + 50; // 50-99 arası
+            num2 = Math.floor(Math.random() * 40) + 10; // 10-49 arası
+            answer = num1 - num2;
+          } else {
+            num1 = Math.floor(Math.random() * 8) + 6; // 6-13 arası
+            num2 = Math.floor(Math.random() * 8) + 6; // 6-13 arası
+            answer = num1 * num2;
+          }
+          
+          setMathChallenge({ q: `${num1} ${op === '*' ? 'x' : op} ${num2}`, a: answer.toString() });
+        }, []);
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in">
+            <div className="glass-panel rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative modal-enter text-center">
+              <button onClick={() => { playSound('click'); setParentAuthOpen(false); }} className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-white/50 rounded-full p-2 hover-lift"><IconX size={20} /></button>
+              <h2 className="text-xl font-black mb-4 flex justify-center items-center gap-2"><IconShield size={24} className="text-slate-800"/> Veli Doğrulaması</h2>
+              <p className="text-slate-600 mb-6 font-medium text-sm">Lütfen aşağıdaki matematik işlemini çözün:<br/><span className="text-3xl font-black text-slate-800 tracking-widest mt-2 block">{mathChallenge.q} = ?</span></p>
+              <input 
+                type="number" 
+                id="math-auth" 
+                autoFocus
+                onKeyDown={(e) => { if(e.key === 'Enter') document.getElementById('btn-auth-submit').click(); }}
+                className="w-full text-center text-4xl font-black p-4 bg-white/60 border border-white rounded-[1.5rem] focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 outline-none mb-6 text-slate-700 shadow-inner" 
+                placeholder="Cevap" 
+              />
+              <button 
+                id="btn-auth-submit"
+                onClick={() => {
+                  const val = document.getElementById('math-auth').value;
+                  if(val === mathChallenge.a) { playSound('click'); setParentAuthOpen(false); setIsParentPanelOpen(true); }
+                  else { showAlert('Hatalı Cevap', 'Girdiğiniz işlem sonucu yanlış. Lütfen tekrar deneyin.'); }
+                }} 
+                className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-[1.5rem] hover-lift"
+              >
+                Doğrula ve Gir
+              </button>
+            </div>
           </div>
-        </div>
-      );
+        );
+      };
 
       // -- VELİ PANELİ (AYARLAR) MODALI --
       const ParentPanelModal = () => (
